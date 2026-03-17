@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Chadify",
+    "slug": "chadify",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Chadify needs camera access to transform your face into a gigachad."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Chadify needs access to save your transformed photo.",
+          "savePhotosPermission": "Chadify needs permission to save photos to your library."
+        }
+      ]
+    ]
+  }
+}
