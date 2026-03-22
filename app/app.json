@@ -16,6 +16,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.nearperfectapps.chadify",
       "appleTeamId": "PU35WM26HC",
+      "bundleUrlSchemes": ["com.googleusercontent.apps.652285520029-igdujb1aa2sb6m7rbc5hpj871sftk1uo"],
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

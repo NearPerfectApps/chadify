@@ -25,7 +25,8 @@
       "env": {
         "EXPO_PUBLIC_CONVEX_URL": "https://compassionate-hornet-702.convex.cloud",
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_savsAhvcZolzUUptLeHPcOOJWNh",
-        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "652285520029-igdujb1aa2sb6m7rbc5hpj871sftk1uo.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "652285520029-igdujb1aa2sb6m7rbc5hpj871sftk1uo.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "652285520029-h5lp7ujgarir45ko5d4ileoq2ouhlkup.apps.googleusercontent.com"
       }
     }
   },
