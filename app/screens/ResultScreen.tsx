@@ -11,13 +11,14 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Audio } from "expo-av";
+import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
-import { chadifyImage } from "../services/replicateService";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useAction } from "convex/react";
+import { api } from "../convex/_generated/api";
+import type { AppStackParamList } from "../navigation/AppNavigator";
 
-interface Props {
-  userPhotoUri: string;
-  onRetake: () => void;
-}
+type RouteProps = RouteProp<AppStackParamList, "Result">;
 
 type State = "loading" | "revealing" | "success" | "error";
 
@@ -28,7 +29,7 @@ const MESSAGES = [
   "Unleashing your inner chad...",
 ];
 
-const FADE_OUT_DURATION = 6000; // ms before end to start fading audio
+const FADE_OUT_DURATION = 6000;
 
 function RotatingMessage() {
   const [index, setIndex] = useState(0);
@@ -60,14 +61,21 @@ function RotatingMessage() {
   );
 }
 
-export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
+export default function ResultScreen() {
+  const route = useRoute<RouteProps>();
+  const navigation = useNavigation();
+  const { userPhotoStorageId } = route.params;
+
+  const chadify = useAction(api.actions.chadify.run);
+
   const [state, setState] = useState<State>("loading");
   const [resultUri, setResultUri] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [mediaPermission, requestMediaPermission] =
-    MediaLibrary.usePermissions();
+  const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progressAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
 
   useEffect(() => {
@@ -77,11 +85,30 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
     };
   }, []);
 
+  const startProgress = () => {
+    progressAnim.setValue(0);
+    progressAnimRef.current = Animated.timing(progressAnim, {
+      toValue: 0.85,
+      duration: 20000,
+      useNativeDriver: false,
+    });
+    progressAnimRef.current.start();
+  };
+
+  const completeProgress = () => {
+    progressAnimRef.current?.stop();
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
   const fadeVolume = async (
     sound: Audio.Sound,
     from: number,
     to: number,
-    durationMs: number,
+    durationMs: number
   ) => {
     const steps = 30;
     const stepMs = durationMs / steps;
@@ -97,13 +124,16 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
   const runChadify = async () => {
     setState("loading");
     setErrorMessage("");
+    startProgress();
     try {
-      const uri = await chadifyImage(userPhotoUri);
-      setResultUri(uri);
+      // The action receives a Convex storageId, handles everything server-side
+      const url = await chadify({ userPhotoStorageId });
+      setResultUri(url);
+      completeProgress();
       await playRevealSequence();
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Something went wrong",
+        err instanceof Error ? err.message : "Something went wrong"
       );
       setState("error");
     }
@@ -117,17 +147,13 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       const { sound } = await Audio.Sound.createAsync(
         require("../assets/chad.mp3"),
-        { shouldPlay: true, volume: 0 },
+        { shouldPlay: true, volume: 0 }
       );
       soundRef.current = sound;
 
-      // Fade audio in over 3s
       await fadeVolume(sound, 0, 1, 3000);
-
-      // Wait remaining time before reveal (7.5s total from audio start)
       await new Promise((r) => setTimeout(r, 4500));
 
-      // Reveal image
       setState("success");
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -135,7 +161,6 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
         useNativeDriver: true,
       }).start();
 
-      // Monitor for fade-out near end
       sound.setOnPlaybackStatusUpdate(async (status) => {
         if (!status.isLoaded) return;
         if (status.didJustFinish) {
@@ -168,18 +193,21 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
       if (!granted) {
         Alert.alert(
           "Permission needed",
-          "Allow photo library access to save your chad image.",
+          "Allow photo library access to save your chad image."
         );
         return;
       }
     }
     setSaving(true);
     try {
-      await MediaLibrary.saveToLibraryAsync(resultUri);
-      Alert.alert(
-        "Saved!",
-        "Your chad transformation is in your photo library.",
-      );
+      // resultUri is an HTTPS URL from Convex storage — download to a temp file first
+      const localPath = `${FileSystem.cacheDirectory}chadify_save_${Date.now()}.jpg`;
+      const { uri: localUri } = await FileSystem.downloadAsync(resultUri, localPath);
+      await MediaLibrary.saveToLibraryAsync(localUri);
+      await FileSystem.deleteAsync(localUri, { idempotent: true });
+      Alert.alert("Saved!", "Your chad transformation is in your photo library.", [
+        { text: "OK", onPress: () => navigation.navigate("Camera" as any) },
+      ]);
     } catch {
       Alert.alert("Error", "Failed to save. Please try again.");
     } finally {
@@ -193,6 +221,20 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
         <ActivityIndicator size="large" color="#fff" />
         <RotatingMessage />
         <Text style={styles.loadingSubtitle}>This may take a moment</Text>
+        <View style={styles.progressBarContainer}>
+          <Animated.View
+            style={[
+              styles.progressBarFill,
+              {
+                width: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0%", "100%"],
+                }),
+              },
+            ]}
+          />
+        </View>
+        <Text style={styles.progressHint}>~20 seconds</Text>
       </View>
     );
   }
@@ -205,7 +247,7 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
         <TouchableOpacity style={styles.primaryButton} onPress={runChadify}>
           <Text style={styles.primaryButtonText}>Try Again</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={onRetake}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
           <Text style={styles.secondaryButtonText}>Retake Photo</Text>
         </TouchableOpacity>
       </View>
@@ -236,7 +278,7 @@ export default function ResultScreen({ userPhotoUri, onRetake }: Props) {
             <Text style={styles.primaryButtonText}>Save to Gallery</Text>
           )}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={onRetake}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
           <Text style={styles.secondaryButtonText}>Retake</Text>
         </TouchableOpacity>
       </View>
@@ -271,6 +313,25 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.35)",
     fontSize: 13,
     marginTop: 12,
+  },
+  progressBarContainer: {
+    width: "100%",
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 2,
+    marginTop: 24,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "rgba(255,255,255,0.7)",
+    borderRadius: 2,
+  },
+  progressHint: {
+    color: "rgba(255,255,255,0.25)",
+    fontSize: 11,
+    marginTop: 8,
+    letterSpacing: 0.5,
   },
   successTitle: {
     color: "#fff",
