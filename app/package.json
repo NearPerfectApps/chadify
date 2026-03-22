@@ -8,7 +8,9 @@
     "convex": "npx convex dev",
     "build:sim": "eas build --profile development-simulator --platform ios",
     "build:dev": "eas build --profile development --platform ios",
+    "build:staging": "eas build --profile staging --platform ios",
     "build:prod": "eas build --profile production --platform ios",
+    "submit:prod": "eas submit --profile production --platform ios",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web"

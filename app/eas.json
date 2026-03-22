@@ -12,11 +12,20 @@
       "developmentClient": true,
       "ios": { "simulator": true }
     },
-    "preview": {
-      "distribution": "internal"
+    "staging": {
+      "distribution": "internal",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://dependable-tiger-83.eu-west-1.convex.cloud",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "test_SQUxAVnytsgQRLCftbcWoKGJxnh"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://compassionate-hornet-702.convex.cloud",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_savsAhvcZolzUUptLeHPcOOJWNh"
+      }
     }
   },
   "submit": {
