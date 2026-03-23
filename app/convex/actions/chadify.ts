@@ -9,26 +9,12 @@ const GEMINI_MODEL = "gemini-3.1-flash-image-preview";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const PROMPT =
-  "Create a photorealistic portrait by placing the face from image 1 onto the body from image 2. " +
-  "There are exactly two rules and they must both be fully satisfied — they are not in conflict if you understand them correctly. " +
-
-  "RULE 1 — FACE GEOMETRY IS UNTOUCHABLE (from image 1): " +
-  "The 3D structure of the face must come entirely from image 1. This means: chin shape, jaw contour, cheekbones, nose shape and size, eye shape and spacing, lip shape, forehead, ear shape, and any distinctive marks. " +
-  "Do NOT import any facial geometry from image 2 — not the chin, not the jaw, not the cheekbones, not the nose. Even if image 2 has a stronger jaw or different proportions, the face structure must remain that of image 1. " +
-  "The person must be instantly recognizable as the subject of image 1. " +
-
-  "GENDER ADAPTATION: Detect the apparent gender of the subject in image 1. If the subject reads as female, adapt the body from image 2 accordingly — maintain the powerful, dramatic aesthetic and cinematic style, but adjust the physique proportions, musculature, and silhouette to be naturally and convincingly female. The result should feel like the female equivalent of the image 2 archetype, not a woman forced into a male body. " +
-
-  "ANIMAL SUBJECTS: If image 1 contains an animal, create a human face that is unmistakably inspired by that animal. Identify its most iconic visual signature — fur color and pattern, eye color and shape, distinctive markings, ear shape — and map them onto human features: fur pattern becomes skin tone or texture, snout proportions inform nose shape, claw or fang features can subtly influence jaw or mouth character. The result should make a viewer immediately think of that animal while reading as a believable human face. " +
-
-  "RULE 2 — RENDERING IS ENTIRELY FROM IMAGE 2 (lighting, tone, style): " +
-  "Everything about how the face looks — not its shape — must match image 2. " +
-  "Lighting: relight the face using the exact light source direction, intensity, and color temperature from image 2, including cast shadows on brow, nose, jaw, and neck. " +
-  "Perspective: rotate and tilt the face to match the head angle implied by the body in image 2. A 3/4 body requires a 3/4 face. " +
-  "Skin tone & color grading: adapt the face's color, contrast, and tonal range to match image 2 seamlessly — the neck join must be invisible. " +
-  "Photographic style: apply the same film grain, depth of field, contrast, and overall aesthetic as image 2 to the face. " +
-
-  "The final image must look like a single photograph taken in one shot — not a composite.";
+  "Blend image 1 and image 2 into a single photorealistic portrait following these rules: " +
+  "1. STYLE: Keep the gigachad aesthetic from image 2 — black and white, cinematic, powerful, confident energy. " +
+  "2. IDENTITY: The face (or animal head) from image 1 must be fully preserved. Every feature — eyes, nose, mouth, chin, jaw, skin, facial hair or lack of it — must come from image 1. The subject must be instantly recognizable. " +
+  "3. HARMONY: The head and body must feel like they belong together. Match the head angle to the body pose. Lighting and perspective must be consistent throughout. " +
+  "4. NO SEAMS: There must be no visible cut, hard edge, or transition anywhere. The result looks like a single photograph taken in one shot. " +
+  "5. QUALITY: High resolution, photorealistic, no artifacts.";
 
 export const run = action({
   args: {

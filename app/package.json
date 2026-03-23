@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "dev": "npx convex dev & expo start -c",
-    "start": "expo start -c",
+    "dev": "npx convex dev & expo start -c --go",
+    "start": "expo start -c --go",
     "convex": "npx convex dev",
     "build:sim": "eas build --profile development-simulator --platform ios",
     "build:dev": "eas build --profile development --platform ios",
@@ -13,6 +13,7 @@
     "submit:prod": "eas submit --profile production --platform ios",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "iphone": "expo run:ios --device",
     "web": "expo start --web"
   },
   "dependencies": {

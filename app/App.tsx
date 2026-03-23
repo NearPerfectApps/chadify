@@ -6,6 +6,7 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import * as SecureStore from "expo-secure-store";
 import RootNavigator from "./navigation/RootNavigator";
 
+console.log('Convex URL:', process.env.EXPO_PUBLIC_CONVEX_URL);
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
 });
