@@ -14,7 +14,8 @@ const PROMPT =
   "2. IDENTITY: The face (or animal head) from image 1 must be fully preserved. Every feature — eyes, nose, mouth, chin, jaw, skin, facial hair or lack of it — must come from image 1. The subject must be instantly recognizable. " +
   "3. HARMONY: The head and body must feel like they belong together. Match the head angle to the body pose. Lighting and perspective must be consistent throughout. " +
   "4. NO SEAMS: There must be no visible cut, hard edge, or transition anywhere. The result looks like a single photograph taken in one shot. " +
-  "5. QUALITY: High resolution, photorealistic, no artifacts.";
+  "5. LIGHTING: Precisely replicate the lighting and shadows from image 1 — direction, intensity, softness, and colour temperature. Deep shadows, crisp highlights, and strong contrast must carry through to the final result. " +
+  "6. QUALITY: 4K, Ultra-high resolution output. Sharp details, rich tonal range, no compression artifacts, no noise, no blur. Studio-grade photorealism, and amazing skin quiality and texture";
 
 export const run = action({
   args: {
@@ -28,7 +29,9 @@ export const run = action({
     if (!userId) throw new Error("Unauthenticated");
 
     // ── 2. Entitlement gate ──────────────────────────────────────────────────
-    const ent = await ctx.runQuery(internal.entitlements.getForUser, { userId });
+    const ent = await ctx.runQuery(internal.entitlements.getForUser, {
+      userId,
+    });
     const now = Date.now();
 
     type Mode = "lifetime" | "credit" | "free";
@@ -45,7 +48,7 @@ export const run = action({
         const h = Math.floor(minutesLeft / 60);
         const m = minutesLeft % 60;
         throw new Error(
-          `Your free generation will be ready in ${h > 0 ? `${h}h ` : ""}${m}m. Purchase credits for instant access.`
+          `Your free generation will be ready in ${h > 0 ? `${h}h ` : ""}${m}m. Purchase credits for instant access.`,
         );
       }
       mode = "free";
@@ -55,7 +58,10 @@ export const run = action({
     let refId = referenceStorageId;
     if (!refId) {
       const ref = await ctx.runQuery(internal.referenceImages.getFirst);
-      if (!ref) throw new Error("No reference images configured. Please contact support.");
+      if (!ref)
+        throw new Error(
+          "No reference images configured. Please contact support.",
+        );
       refId = ref.storageId;
     }
 
@@ -74,14 +80,21 @@ export const run = action({
     ]);
 
     // ── 6. Call Gemini (API key is a Convex env var — never in the app bundle) ──
-    const resultBase64 = await callGemini(userBase64, gigachadBase64);
+    const userMimeType = userBlob.type || "image/jpeg";
+    const resultBase64 = await callGemini(
+      userBase64,
+      userMimeType,
+      gigachadBase64,
+    );
 
     // ── 7. Delete user's original photo immediately ──────────────────────────
     await ctx.storage.delete(userPhotoStorageId);
 
     // ── 8. Store result in Convex storage ────────────────────────────────────
     const resultBytes = base64ToUint8Array(resultBase64);
-    const resultBlob = new Blob([resultBytes.buffer as ArrayBuffer], { type: "image/jpeg" });
+    const resultBlob = new Blob([resultBytes.buffer as ArrayBuffer], {
+      type: "image/jpeg",
+    });
     const resultStorageId = await ctx.storage.store(resultBlob);
 
     // ── 9. Persist metadata ──────────────────────────────────────────────────
@@ -95,7 +108,9 @@ export const run = action({
     if (mode === "credit") {
       await ctx.runMutation(internal.entitlements.deductCredit, { userId });
     } else if (mode === "free") {
-      await ctx.runMutation(internal.entitlements.recordFreeGeneration, { userId });
+      await ctx.runMutation(internal.entitlements.recordFreeGeneration, {
+        userId,
+      });
     }
 
     // ── 10. Return served URL — never log it ─────────────────────────────────
@@ -126,7 +141,11 @@ function base64ToUint8Array(base64: string): Uint8Array {
   return bytes;
 }
 
-async function callGemini(userBase64: string, refBase64: string): Promise<string> {
+async function callGemini(
+  userBase64: string,
+  userMimeType: string,
+  refBase64: string,
+): Promise<string> {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY not configured.");
 
@@ -134,13 +153,15 @@ async function callGemini(userBase64: string, refBase64: string): Promise<string
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: PROMPT },
-          { inline_data: { mime_type: "image/jpeg", data: userBase64 } },
-          { inline_data: { mime_type: "image/webp", data: refBase64 } },
-        ],
-      }],
+      contents: [
+        {
+          parts: [
+            { text: PROMPT },
+            { inline_data: { mime_type: userMimeType, data: userBase64 } },
+            { inline_data: { mime_type: "image/webp", data: refBase64 } },
+          ],
+        },
+      ],
       generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
     }),
   });
@@ -153,10 +174,15 @@ async function callGemini(userBase64: string, refBase64: string): Promise<string
 
   const data = await response.json();
   const parts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
-  const imagePart = parts.find((p: any) => p.inline_data?.data || p.inlineData?.data);
+  const imagePart = parts.find(
+    (p: any) => p.inline_data?.data || p.inlineData?.data,
+  );
 
   if (!imagePart) {
-    console.error("[chadify] No image returned. finishReason:", data?.candidates?.[0]?.finishReason);
+    console.error(
+      "[chadify] No image returned. finishReason:",
+      data?.candidates?.[0]?.finishReason,
+    );
     throw new Error("Transformation failed. Please try again.");
   }
 

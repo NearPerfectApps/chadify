@@ -10,6 +10,7 @@ import {
   Modal,
 } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation, useQuery } from "convex/react";
@@ -103,6 +104,41 @@ export default function CameraScreen() {
     }
   };
 
+  const pickFromGallery = async () => {
+    if (busy) return;
+    if (!canGenerate) {
+      setPaywallVisible(true);
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.85,
+      exif: false,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    const asset = result.assets[0];
+    const mimeType = asset.mimeType ?? "image/jpeg";
+
+    setUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const blob = await fileUriToBlob(asset.uri);
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": mimeType },
+        body: blob,
+      });
+      const { storageId } = await response.json();
+      navigation.navigate("Result", { userPhotoStorageId: storageId });
+    } catch (e: any) {
+      Alert.alert("Error", e?.message ?? String(e));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const busy = capturing || uploading;
 
   return (
@@ -115,17 +151,26 @@ export default function CameraScreen() {
         <SafeAreaView style={styles.overlay}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>CHADIFY</Text>
-            <TouchableOpacity style={styles.creditsButton} onPress={() => setPaywallVisible(true)}>
-              <Text style={styles.creditsText}>
-                {entitlements?.lifetimeAccess
-                  ? "∞  Lifetime"
-                  : (entitlements?.credits ?? 0) > 0
-                  ? `◆  ${entitlements!.credits} credit${entitlements!.credits === 1 ? "" : "s"}`
-                  : countdown
-                  ? `⏱  ${countdown}`
-                  : "◆  Get credits"}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.titleButtons}>
+              <TouchableOpacity style={styles.creditsButton} onPress={() => setPaywallVisible(true)}>
+                <Text style={styles.creditsText}>
+                  {entitlements?.lifetimeAccess
+                    ? "∞  Lifetime"
+                    : (entitlements?.credits ?? 0) > 0
+                    ? `◆  ${entitlements!.credits} credit${entitlements!.credits === 1 ? "" : "s"}`
+                    : countdown
+                    ? `⏱  ${countdown}`
+                    : "◆  Get credits"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.creditsButton}
+                onPress={() => navigation.navigate("Gallery")}
+                disabled={busy}
+              >
+                <Text style={styles.creditsText}>⊞  Gallery</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.controls}>
@@ -152,10 +197,10 @@ export default function CameraScreen() {
 
             <TouchableOpacity
               style={styles.galleryButton}
-              onPress={() => navigation.navigate("Gallery")}
+              onPress={pickFromGallery}
               disabled={busy}
             >
-              <Text style={[styles.galleryIcon, busy && styles.iconDisabled]}>⊞</Text>
+              <Text style={[styles.galleryIcon, busy && styles.iconDisabled]}>⊕</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -193,6 +238,10 @@ const styles = StyleSheet.create({
   titleRow: {
     alignItems: "center",
     gap: 10,
+  },
+  titleButtons: {
+    flexDirection: "row",
+    gap: 8,
   },
   title: {
     color: "#fff",
