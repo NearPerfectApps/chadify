@@ -8,15 +8,20 @@ import {
   Alert,
   SafeAreaView,
   Modal,
+  Linking,
 } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import type { AppStackParamList } from "../navigation/AppNavigator";
 import PaywallScreen from "./PaywallScreen";
+
+const AI_CONSENT_KEY = "aiConsentGiven";
+const PRIVACY_URL = "https://www.nearperfectapps.xyz/privacy/chadify";
 
 type Nav = NativeStackNavigationProp<AppStackParamList, "Camera">;
 
@@ -28,6 +33,7 @@ export default function CameraScreen() {
   const [capturing, setCapturing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [consentVisible, setConsentVisible] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const entitlements = useQuery(api.entitlements.getMyEntitlements);
 
@@ -52,6 +58,12 @@ export default function CameraScreen() {
     return () => clearInterval(id);
   }, [entitlements?.nextFreeAt]);
 
+  useEffect(() => {
+    SecureStore.getItemAsync(AI_CONSENT_KEY).then((value) => {
+      if (!value) setConsentVisible(true);
+    });
+  }, []);
+
   if (!permission) {
     return (
       <View style={styles.centered}>
@@ -67,7 +79,7 @@ export default function CameraScreen() {
           Camera access is required to chadify yourself
         </Text>
         <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-          <Text style={styles.permissionButtonText}>Grant Camera Access</Text>
+          <Text style={styles.permissionButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
     );
@@ -141,8 +153,40 @@ export default function CameraScreen() {
 
   const busy = capturing || uploading;
 
+  const handleConsentAgree = async () => {
+    await SecureStore.setItemAsync(AI_CONSENT_KEY, "true");
+    setConsentVisible(false);
+  };
+
   return (
     <View style={styles.container}>
+      <Modal visible={consentVisible} animationType="fade" transparent>
+        <View style={styles.consentBackdrop}>
+          <View style={styles.consentCard}>
+            <Text style={styles.consentTitle}>Before you start</Text>
+            <Text style={styles.consentBody}>
+              To transform your photo, Chadify sends your image to{" "}
+              <Text style={styles.consentBold}>Google Gemini AI</Text> for
+              processing. Your original photo is deleted immediately after the
+              transformation is generated — only the result is stored.
+            </Text>
+            <Text style={styles.consentBody}>
+              By continuing, you agree to this data processing as described in
+              our Privacy Policy.
+            </Text>
+            <TouchableOpacity
+              style={styles.consentLinkButton}
+              onPress={() => Linking.openURL(PRIVACY_URL)}
+            >
+              <Text style={styles.consentLink}>Read Privacy Policy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.consentAgreeButton} onPress={handleConsentAgree}>
+              <Text style={styles.consentAgreeText}>I Agree</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={paywallVisible} animationType="slide" onRequestClose={() => setPaywallVisible(false)}>
         <PaywallScreen onClose={() => setPaywallVisible(false)} />
       </Modal>
@@ -337,5 +381,55 @@ const styles = StyleSheet.create({
     color: "#000",
     fontWeight: "700",
     fontSize: 16,
+  },
+  consentBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  consentCard: {
+    backgroundColor: "#111",
+    borderRadius: 20,
+    padding: 24,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  consentTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 16,
+  },
+  consentBody: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 14,
+    lineHeight: 21,
+    marginBottom: 12,
+  },
+  consentBold: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  consentLinkButton: {
+    marginBottom: 20,
+  },
+  consentLink: {
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 13,
+    textDecorationLine: "underline",
+  },
+  consentAgreeButton: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  consentAgreeText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

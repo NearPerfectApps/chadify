@@ -15,6 +15,7 @@ import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as referenceImages from "../referenceImages.js";
 import type * as transformations from "../transformations.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   referenceImages: typeof referenceImages;
   transformations: typeof transformations;
+  users: typeof users;
 }>;
 
 /**

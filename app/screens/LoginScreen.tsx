@@ -23,9 +23,14 @@ export default function LoginScreen() {
   const [loadingApple, setLoadingApple] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
 
+  const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  const googleAndroidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+
   const [_request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    // Fall back to a placeholder so the hook doesn't throw when env vars are
+    // missing — the actual sign-in is guarded below.
+    iosClientId: googleIosClientId ?? "missing",
+    androidClientId: googleAndroidClientId ?? "missing",
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     redirectUri: AuthSession.makeRedirectUri({
       native: `com.googleusercontent.apps.652285520029-igdujb1aa2sb6m7rbc5hpj871sftk1uo:/`,
@@ -66,6 +71,14 @@ export default function LoginScreen() {
   };
 
   const handleGoogle = async () => {
+    if (!googleIosClientId && Platform.OS === "ios") {
+      Alert.alert("Configuration error", "Google Sign-In is not configured for this build.");
+      return;
+    }
+    if (!googleAndroidClientId && Platform.OS === "android") {
+      Alert.alert("Configuration error", "Google Sign-In is not configured for this build.");
+      return;
+    }
     setLoadingGoogle(true);
     try {
       await promptAsync();

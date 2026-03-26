@@ -11,6 +11,8 @@ import { api } from "../convex/_generated/api";
 const IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "";
 const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? "";
 
+let _configured = false;
+
 export function useRevenueCat() {
   const [isReady, setIsReady] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
@@ -21,7 +23,10 @@ export function useRevenueCat() {
       try {
         if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
         const apiKey = Platform.select({ ios: IOS_KEY, android: ANDROID_KEY }) ?? IOS_KEY;
-        Purchases.configure({ apiKey });
+        if (!_configured) {
+          Purchases.configure({ apiKey });
+          _configured = true;
+        }
         const o = await Purchases.getOfferings();
         setOfferings(o);
         setIsReady(true);

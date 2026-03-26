@@ -16,11 +16,14 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { usePaginatedQuery, useMutation } from "convex/react";
-import { useAuthActions } from "@convex-dev/auth/react";
 import * as FileSystem from "expo-file-system/legacy";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
+import type { AppStackParamList } from "../navigation/AppNavigator";
+
+type Nav = NativeStackNavigationProp<AppStackParamList, "Gallery">;
 
 const COLUMN_COUNT = 2;
 const GAP = 8;
@@ -37,8 +40,7 @@ type Item = {
 type SelectedItem = { id: Id<"transformations">; url: string };
 
 export default function GalleryScreen() {
-  const navigation = useNavigation();
-  const { signOut } = useAuthActions();
+  const navigation = useNavigation<Nav>();
   const removeTransformation = useMutation(api.transformations.remove);
 
   const [selected, setSelected] = useState<SelectedItem | null>(null);
@@ -50,13 +52,6 @@ export default function GalleryScreen() {
     {},
     { initialNumItems: PAGE_SIZE }
   );
-
-  const handleSignOut = () => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: () => signOut() },
-    ]);
-  };
 
   const handleShare = async () => {
     if (!selected) return;
@@ -120,8 +115,8 @@ export default function GalleryScreen() {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title}>YOUR CHADS</Text>
-        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-          <Text style={styles.signOutText}>Sign out</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.settingsButton}>
+          <Feather name="settings" size={20} color="rgba(255,255,255,0.5)" />
         </TouchableOpacity>
       </View>
 
@@ -250,12 +245,11 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 4,
   },
-  signOutButton: {
-    paddingVertical: 6,
-  },
-  signOutText: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 13,
+  settingsButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "flex-end",
   },
   centered: {
     flex: 1,

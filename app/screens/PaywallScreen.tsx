@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   SafeAreaView,
+  Linking,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { PurchasesPackage } from "react-native-purchases";
@@ -74,6 +75,9 @@ export default function PaywallScreen({ onClose }: Props) {
     setLoadingId(productId);
     try {
       await purchase(pkg);
+      onClose();
+    } catch {
+      // error already handled inside purchase()
     } finally {
       setLoadingId(null);
     }
@@ -82,7 +86,7 @@ export default function PaywallScreen({ onClose }: Props) {
   const priceFor = (productId: string): string => {
     const pkg = getPackage(productId);
     if (!pkg) return "—";
-    return pkg.product.localizedPriceString;
+    return pkg.product.priceString;
   };
 
   return (
@@ -148,6 +152,16 @@ export default function PaywallScreen({ onClose }: Props) {
         <Text style={styles.legal}>
           Subscriptions renew automatically. Cancel anytime in your App Store settings.
         </Text>
+
+        <View style={styles.legalLinks}>
+          <TouchableOpacity onPress={() => Linking.openURL("https://www.nearperfectapps.xyz/privacy/chadify")}>
+            <Text style={styles.legalLink}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalLinkSeparator}>·</Text>
+          <TouchableOpacity onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}>
+            <Text style={styles.legalLink}>Terms of Use</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -273,5 +287,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center",
     lineHeight: 16,
+    marginBottom: 12,
+  },
+  legalLinks: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    paddingBottom: 8,
+  },
+  legalLink: {
+    color: "rgba(255,255,255,0.25)",
+    fontSize: 11,
+    textDecorationLine: "underline",
+  },
+  legalLinkSeparator: {
+    color: "rgba(255,255,255,0.15)",
+    fontSize: 11,
   },
 });
