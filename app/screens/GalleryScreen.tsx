@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import * as FileSystem from "expo-file-system/legacy";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import type { AppStackParamList } from "../navigation/AppNavigator";
+import { useGuest } from "../context/GuestContext";
+import SignInPromptModal from "../components/SignInPromptModal";
 
 type Nav = NativeStackNavigationProp<AppStackParamList, "Gallery">;
 
@@ -42,10 +44,16 @@ type SelectedItem = { id: Id<"transformations">; url: string };
 export default function GalleryScreen() {
   const navigation = useNavigation<Nav>();
   const removeTransformation = useMutation(api.transformations.remove);
+  const { isAnonymous } = useGuest();
 
   const [selected, setSelected] = useState<SelectedItem | null>(null);
   const [sharing, setSharing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [signInPromptVisible, setSignInPromptVisible] = useState(false);
+
+  useEffect(() => {
+    if (isAnonymous) setSignInPromptVisible(true);
+  }, [isAnonymous]);
 
   const { results, status, loadMore } = usePaginatedQuery(
     api.transformations.listForCurrentUser,
@@ -153,6 +161,13 @@ export default function GalleryScreen() {
           }
         />
       )}
+
+      <SignInPromptModal
+        visible={signInPromptVisible}
+        onClose={() => { setSignInPromptVisible(false); navigation.goBack(); }}
+        title="Your Gallery Awaits"
+        subtitle="Sign in to save and revisit all your chad transformations"
+      />
 
       <Modal
         visible={!!selected}

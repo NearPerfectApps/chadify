@@ -15,6 +15,8 @@ import { useNavigation } from "@react-navigation/native";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { useGuest } from "../context/GuestContext";
+import SignInPromptModal from "../components/SignInPromptModal";
 
 const PRIVACY_URL = "https://www.nearperfectapps.xyz/privacy/chadify";
 const TERMS_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
@@ -23,7 +25,9 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
   const { signOut } = useAuthActions();
   const deleteAccount = useMutation(api.users.deleteAccount);
+  const { isAnonymous } = useGuest();
   const [deleting, setDeleting] = useState(false);
+  const [signInPromptVisible, setSignInPromptVisible] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert("Sign out", "Are you sure you want to sign out?", [
@@ -112,17 +116,33 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
-          <TouchableOpacity style={styles.row} onPress={handleSignOut}>
-            <Text style={styles.rowLabel}>Sign out</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.row} onPress={handleDeleteAccount} disabled={deleting}>
-            {deleting ? (
-              <ActivityIndicator color="#ff4c4c" size="small" />
-            ) : (
-              <Text style={styles.rowLabelDestructive}>Delete account</Text>
-            )}
-          </TouchableOpacity>
+          {isAnonymous ? (
+            <TouchableOpacity style={styles.row} onPress={() => setSignInPromptVisible(true)}>
+              <Text style={styles.rowLabel}>Create account</Text>
+              <Feather name="user-plus" size={14} color="rgba(255,255,255,0.3)" />
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity style={styles.row} onPress={handleSignOut}>
+                <Text style={styles.rowLabel}>Sign out</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.row} onPress={handleDeleteAccount} disabled={deleting}>
+                {deleting ? (
+                  <ActivityIndicator color="#ff4c4c" size="small" />
+                ) : (
+                  <Text style={styles.rowLabelDestructive}>Delete account</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
+
+        <SignInPromptModal
+          visible={signInPromptVisible}
+          onClose={() => setSignInPromptVisible(false)}
+          title="Create Your Account"
+          subtitle="Sign in to save your transformations and unlock all features"
+        />
       </ScrollView>
     </SafeAreaView>
   );

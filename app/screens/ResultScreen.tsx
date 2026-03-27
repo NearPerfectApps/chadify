@@ -14,9 +14,12 @@ import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
 import type { AppStackParamList } from "../navigation/AppNavigator";
+import { useGuest } from "../context/GuestContext";
+import SignInPromptModal from "../components/SignInPromptModal";
 
 type RouteProps = RouteProp<AppStackParamList, "Result">;
 
@@ -67,11 +70,15 @@ export default function ResultScreen() {
   const { userPhotoStorageId } = route.params;
 
   const chadify = useAction(api.actions.chadify.run);
+  const savePending = useMutation(api.transformations.savePending);
+  const { isAnonymous, setPendingResult, clearPendingResult } = useGuest();
 
   const [state, setState] = useState<State>("loading");
   const [resultUri, setResultUri] = useState<string | null>(null);
+  const [pendingStorageId, setPendingStorageId] = useState<Id<"_storage"> | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [signInPromptVisible, setSignInPromptVisible] = useState(false);
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -127,8 +134,12 @@ export default function ResultScreen() {
     startProgress();
     try {
       // The action receives a Convex storageId, handles everything server-side
-      const url = await chadify({ userPhotoStorageId });
+      const { url, storageId } = await chadify({ userPhotoStorageId });
       setResultUri(url);
+      if (storageId) {
+        setPendingStorageId(storageId);
+        setPendingResult({ resultUri: url, storageId });
+      }
       completeProgress();
       await playRevealSequence();
     } catch (err) {
@@ -186,21 +197,14 @@ export default function ResultScreen() {
     }
   };
 
-  const saveToGallery = async () => {
+  const saveToAppGallery = async () => {
     if (!resultUri) return;
-    if (!mediaPermission?.granted) {
-      const { granted } = await requestMediaPermission();
-      if (!granted) {
-        Alert.alert(
-          "Permission needed",
-          "Allow photo library access to save your chad image."
-        );
-        return;
-      }
+    if (isAnonymous) {
+      setSignInPromptVisible(true);
+      return;
     }
     setSaving(true);
     try {
-      // resultUri is an HTTPS URL from Convex storage — download to a temp file first
       const localPath = `${FileSystem.cacheDirectory}chadify_save_${Date.now()}.jpg`;
       const { uri: localUri } = await FileSystem.downloadAsync(resultUri, localPath);
       await MediaLibrary.saveToLibraryAsync(localUri);
@@ -212,6 +216,22 @@ export default function ResultScreen() {
       Alert.alert("Error", "Failed to save. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAfterSignIn = async () => {
+    setSignInPromptVisible(false);
+    if (!pendingStorageId) return;
+    try {
+      await savePending({ storageId: pendingStorageId });
+      clearPendingResult();
+      setPendingStorageId(null);
+      Alert.alert("Saved to gallery!", "Your transformation is now in your gallery.", [
+        { text: "View Gallery", onPress: () => navigation.navigate("Gallery" as any) },
+        { text: "OK" },
+      ]);
+    } catch {
+      // Non-fatal — the image is still viewable
     }
   };
 
@@ -269,19 +289,27 @@ export default function ResultScreen() {
       <View style={styles.actions}>
         <TouchableOpacity
           style={[styles.primaryButton, saving && styles.buttonDisabled]}
-          onPress={saveToGallery}
+          onPress={saveToAppGallery}
           disabled={saving}
         >
           {saving ? (
             <ActivityIndicator color="#000" />
           ) : (
-            <Text style={styles.primaryButtonText}>Save to Gallery</Text>
+            <Text style={styles.primaryButtonText}>Save to My Gallery</Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
           <Text style={styles.secondaryButtonText}>Retake</Text>
         </TouchableOpacity>
       </View>
+
+      <SignInPromptModal
+        visible={signInPromptVisible}
+        onClose={() => setSignInPromptVisible(false)}
+        onSignedIn={handleAfterSignIn}
+        title="Save Your Chad"
+        subtitle="Sign in to save this transformation to your gallery and access it anytime"
+      />
     </SafeAreaView>
   );
 }

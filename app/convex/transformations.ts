@@ -71,6 +71,21 @@ export const adminResetToday = internalMutation({
   },
 });
 
+// Public — called by the client after an anonymous user signs in, to save
+// their pending transformation result into their new (real) account gallery
+export const savePending = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, { storageId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthenticated");
+    await ctx.db.insert("transformations", {
+      userId: userId as string,
+      storageId,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 // Internal — called from the chadify action after successful generation
 export const insert = internalMutation({
   args: {

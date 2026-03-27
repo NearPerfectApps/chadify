@@ -19,6 +19,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import type { AppStackParamList } from "../navigation/AppNavigator";
 import PaywallScreen from "./PaywallScreen";
+import { useGuest } from "../context/GuestContext";
+import SignInPromptModal from "../components/SignInPromptModal";
 
 const AI_CONSENT_KEY = "aiConsentGiven";
 const PRIVACY_URL = "https://www.nearperfectapps.xyz/privacy/chadify";
@@ -34,6 +36,8 @@ export default function CameraScreen() {
   const [uploading, setUploading] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [consentVisible, setConsentVisible] = useState(false);
+  const [signInPromptVisible, setSignInPromptVisible] = useState(false);
+  const { isAnonymous } = useGuest();
   const cameraRef = useRef<CameraView>(null);
   const entitlements = useQuery(api.entitlements.getMyEntitlements);
 
@@ -88,7 +92,7 @@ export default function CameraScreen() {
   const takePicture = async () => {
     if (!cameraRef.current || capturing || uploading) return;
     if (!canGenerate) {
-      setPaywallVisible(true);
+      isAnonymous ? setSignInPromptVisible(true) : setPaywallVisible(true);
       return;
     }
     setCapturing(true);
@@ -119,7 +123,7 @@ export default function CameraScreen() {
   const pickFromGallery = async () => {
     if (busy) return;
     if (!canGenerate) {
-      setPaywallVisible(true);
+      isAnonymous ? setSignInPromptVisible(true) : setPaywallVisible(true);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -191,14 +195,26 @@ export default function CameraScreen() {
         <PaywallScreen onClose={() => setPaywallVisible(false)} />
       </Modal>
 
+      <SignInPromptModal
+        visible={signInPromptVisible}
+        onClose={() => setSignInPromptVisible(false)}
+        title="Unlock Your Full Chad Experience"
+        subtitle="Sign in to access your gallery, purchase credits, and save all your transformations"
+      />
+
       <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
         <SafeAreaView style={styles.overlay}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>CHADIFY</Text>
             <View style={styles.titleButtons}>
-              <TouchableOpacity style={styles.creditsButton} onPress={() => setPaywallVisible(true)}>
+              <TouchableOpacity
+                style={styles.creditsButton}
+                onPress={() => isAnonymous ? setSignInPromptVisible(true) : setPaywallVisible(true)}
+              >
                 <Text style={styles.creditsText}>
-                  {entitlements?.lifetimeAccess
+                  {isAnonymous
+                    ? countdown ? `⏱  ${countdown}` : "◆  Get credits"
+                    : entitlements?.lifetimeAccess
                     ? "∞  Lifetime"
                     : (entitlements?.credits ?? 0) > 0
                     ? `◆  ${entitlements!.credits} credit${entitlements!.credits === 1 ? "" : "s"}`
@@ -209,7 +225,7 @@ export default function CameraScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.creditsButton}
-                onPress={() => navigation.navigate("Gallery")}
+                onPress={() => isAnonymous ? setSignInPromptVisible(true) : navigation.navigate("Gallery")}
                 disabled={busy}
               >
                 <Text style={styles.creditsText}>⊞  Gallery</Text>

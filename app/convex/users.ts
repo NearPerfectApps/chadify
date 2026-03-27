@@ -1,5 +1,26 @@
-import { mutation } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
+import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+// Public — used by GuestContext to determine if the current user is anonymous
+export const getMyProfile = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const user = await ctx.db.get(userId);
+    return { isAnonymous: user?.isAnonymous ?? false };
+  },
+});
+
+// Internal — used by the chadify action to skip DB save for anonymous users
+export const getIsAnonymous = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get(userId);
+    return user?.isAnonymous ?? false;
+  },
+});
 
 // Permanently deletes the current user's account and all associated data.
 // Removes: transformations (+ storage files), entitlements, auth sessions

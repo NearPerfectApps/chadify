@@ -3,6 +3,7 @@ import { action } from "../_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "../_generated/api";
+import { Id } from "../_generated/dataModel";
 
 const FREE_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
 const GEMINI_MODEL = "gemini-3.1-flash-image-preview";
@@ -22,8 +23,11 @@ export const run = action({
     userPhotoStorageId: v.id("_storage"),
     referenceStorageId: v.optional(v.id("_storage")),
   },
-  returns: v.string(), // served URL of the result image
-  handler: async (ctx, { userPhotoStorageId, referenceStorageId }) => {
+  returns: v.object({
+    url: v.string(),
+    storageId: v.optional(v.id("_storage")), // only returned for anonymous users (for post-sign-in save)
+  }),
+  handler: async (ctx, { userPhotoStorageId, referenceStorageId }): Promise<{ url: string; storageId?: Id<"_storage"> }> => {
     // ── 1. Auth ──────────────────────────────────────────────────────────────
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthenticated");
@@ -55,8 +59,10 @@ export const run = action({
     }
 
     // ── 3. Resolve reference image ───────────────────────────────────────────
-    let refId = referenceStorageId;
-    if (!refId) {
+    let refId: Id<"_storage">;
+    if (referenceStorageId) {
+      refId = referenceStorageId;
+    } else {
       const ref = await ctx.runQuery(internal.referenceImages.getFirst);
       if (!ref)
         throw new Error(
@@ -97,12 +103,15 @@ export const run = action({
     });
     const resultStorageId = await ctx.storage.store(resultBlob);
 
-    // ── 9. Persist metadata ──────────────────────────────────────────────────
-    await ctx.runMutation(internal.transformations.insert, {
-      userId,
-      storageId: resultStorageId,
-      createdAt: Date.now(),
-    });
+    // ── 9. Persist metadata (skip for anonymous users — they save after sign-in) ─
+    const isAnonymous: boolean = await ctx.runQuery(internal.users.getIsAnonymous, { userId });
+    if (!isAnonymous) {
+      await ctx.runMutation(internal.transformations.insert, {
+        userId,
+        storageId: resultStorageId,
+        createdAt: Date.now(),
+      });
+    }
 
     // ── 9b. Deduct entitlement (after success — never penalise Gemini failures) ─
     if (mode === "credit") {
@@ -116,7 +125,10 @@ export const run = action({
     // ── 10. Return served URL — never log it ─────────────────────────────────
     const url = await ctx.storage.getUrl(resultStorageId);
     if (!url) throw new Error("Failed to retrieve result URL.");
-    return url;
+    return {
+      url,
+      storageId: isAnonymous ? resultStorageId : undefined,
+    };
   },
 });
 

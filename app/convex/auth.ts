@@ -4,6 +4,7 @@ import {
   retrieveAccount,
 } from "@convex-dev/auth/server";
 import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
+import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const APPLE_JWKS = createRemoteJWKSet(
@@ -98,5 +99,5 @@ const GoogleNative = ConvexCredentials({
 });
 
 export const { auth, signIn, signOut, store } = convexAuth({
-  providers: [AppleNative, GoogleNative],
+  providers: [AppleNative, GoogleNative, Anonymous],
 });
