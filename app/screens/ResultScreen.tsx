@@ -10,7 +10,7 @@ import {
   Animated,
   SafeAreaView,
 } from "react-native";
-import { Audio } from "expo-av";
+import { setAudioModeAsync, createAudioPlayer, AudioPlayer } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -83,12 +83,12 @@ export default function ResultScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const progressAnimRef = useRef<Animated.CompositeAnimation | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<AudioPlayer | null>(null);
 
   useEffect(() => {
     runChadify();
     return () => {
-      soundRef.current?.unloadAsync();
+      soundRef.current?.remove();
     };
   }, []);
 
@@ -112,7 +112,7 @@ export default function ResultScreen() {
   };
 
   const fadeVolume = async (
-    sound: Audio.Sound,
+    player: AudioPlayer,
     from: number,
     to: number,
     durationMs: number
@@ -123,7 +123,7 @@ export default function ResultScreen() {
     let current = from;
     for (let i = 0; i < steps; i++) {
       current += delta;
-      await sound.setVolumeAsync(Math.max(0, Math.min(1, current)));
+      player.volume = Math.max(0, Math.min(1, current));
       await new Promise((r) => setTimeout(r, stepMs));
     }
   };
@@ -155,14 +155,13 @@ export default function ResultScreen() {
     fadeAnim.setValue(0);
 
     try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      const { sound } = await Audio.Sound.createAsync(
-        require("../assets/chad.mp3"),
-        { shouldPlay: true, volume: 0 }
-      );
-      soundRef.current = sound;
+      await setAudioModeAsync({ playsInSilentModeIOS: true });
+      const player = createAudioPlayer(require("../assets/chad.mp3"));
+      player.volume = 0;
+      player.play();
+      soundRef.current = player;
 
-      await fadeVolume(sound, 0, 1, 3000);
+      await fadeVolume(player, 0, 1, 3000);
       await new Promise((r) => setTimeout(r, 4500));
 
       setState("success");
@@ -172,18 +171,19 @@ export default function ResultScreen() {
         useNativeDriver: true,
       }).start();
 
-      sound.setOnPlaybackStatusUpdate(async (status) => {
+      const subscription = player.addListener("playbackStatusUpdate", async (status) => {
         if (!status.isLoaded) return;
         if (status.didJustFinish) {
-          await sound.unloadAsync();
+          subscription.remove();
+          player.remove();
           soundRef.current = null;
           return;
         }
-        const remaining = (status.durationMillis ?? 0) - status.positionMillis;
+        const remaining = (status.duration - status.currentTime) * 1000;
         if (remaining > 0 && remaining <= FADE_OUT_DURATION) {
-          sound.setOnPlaybackStatusUpdate(null);
-          await fadeVolume(sound, 1, 0, FADE_OUT_DURATION);
-          await sound.unloadAsync();
+          subscription.remove();
+          await fadeVolume(player, 1, 0, FADE_OUT_DURATION);
+          player.remove();
           soundRef.current = null;
         }
       });
