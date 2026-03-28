@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -10,17 +10,18 @@ export default function RootNavigator() {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { signIn } = useAuthActions();
   const userId = useQuery(api.entitlements.getMyUserId);
-  const anonSignInAttempted = useRef(false);
+  // true once anonymous sign-in resolves (success or failure)
+  const [authReady, setAuthReady] = useState(false);
 
-  // Silently sign in as anonymous on first launch (no existing session)
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !anonSignInAttempted.current) {
-      anonSignInAttempted.current = true;
-      signIn("anonymous").catch(() => {
-        // Reset so the next render can retry if needed
-        anonSignInAttempted.current = false;
-      });
+    if (isLoading) return;
+    if (isAuthenticated) {
+      setAuthReady(true);
+      return;
     }
+    signIn("anonymous")
+      .catch(() => {})
+      .finally(() => setAuthReady(true));
   }, [isLoading, isAuthenticated]);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function RootNavigator() {
     }
   }, [isAuthenticated, userId]);
 
-  if (isLoading || (!isAuthenticated && !anonSignInAttempted.current)) {
+  if (!authReady) {
     return (
       <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator color="#fff" size="large" />
