@@ -121,10 +121,13 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
     }
     setLoadingGoogle(true);
     signIn("google", { id_token: idToken })
-      .then(() => onSignedIn?.())
+      .then(() => {
+        onSignedIn?.();
+        handleClose();
+      })
       .catch(() => Alert.alert("Sign in failed", "Could not sign in with Google. Please try again."))
       .finally(() => setLoadingGoogle(false));
-  }, [response]);
+  }, [response, handleClose]);
 
   const handleApple = async () => {
     setLoadingApple(true);
@@ -138,6 +141,7 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
       if (!credential.identityToken) throw new Error("No identity token received.");
       await signIn("apple", { id_token: credential.identityToken });
       onSignedIn?.();
+      handleClose();
     } catch (e: any) {
       if (e?.code === "ERR_REQUEST_CANCELED") return;
       Alert.alert("Sign in failed", "Could not sign in with Apple. Please try again.");

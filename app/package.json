@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "dev": "npx convex dev & expo start -c",
+    "dev": "npx convex dev & expo start -c --device",
     "start": "expo start -c --go",
     "convex": "npx convex dev",
     "build:sim": "eas build --profile development-simulator --platform ios",
@@ -14,6 +14,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "iphone": "expo run:ios --device",
+    "iphone:rebuild": "expo prebuild --clean && sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' ios/Chadify.xcodeproj/project.pbxproj && expo run:ios --device",
     "web": "expo start --web"
   },
   "dependencies": {
