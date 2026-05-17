@@ -46,6 +46,7 @@ http.route({
     if (!event) return new Response("OK", { status: 200 });
 
     const { type, app_user_id: userId, product_id, expiration_at_ms } = event;
+    console.log("[revenuecat] event", { type, userId, product_id, env: event.environment });
     if (!userId) return new Response("OK", { status: 200 });
 
     const grant = PRODUCT_GRANTS[product_id];
@@ -55,6 +56,7 @@ http.route({
         console.warn("[revenuecat] Unknown product_id:", product_id);
         return new Response("OK", { status: 200 });
       }
+      console.log("[revenuecat] granting", { userId, ...grant });
       await ctx.runMutation(internal.entitlements.upsertFromWebhook, {
         userId,
         ...(grant.credits > 0 ? { creditsToAdd: grant.credits } : {}),

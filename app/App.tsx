@@ -7,6 +7,11 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import * as SecureStore from "expo-secure-store";
 import RootNavigator from "./navigation/RootNavigator";
 import { GuestProvider } from "./context/GuestContext";
+import { configureRevenueCat } from "./hooks/useRevenueCat";
+
+if (Platform.OS !== "web") {
+  configureRevenueCat();
+}
 
 console.log('Convex URL:', process.env.EXPO_PUBLIC_CONVEX_URL);
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {

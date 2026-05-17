@@ -13,6 +13,15 @@ const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? "";
 
 let _configured = false;
 
+// Configure RevenueCat once at app boot — must happen before any logIn / purchase call.
+export function configureRevenueCat() {
+  if (_configured) return;
+  if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+  const apiKey = Platform.select({ ios: IOS_KEY, android: ANDROID_KEY }) ?? IOS_KEY;
+  Purchases.configure({ apiKey });
+  _configured = true;
+}
+
 export function useRevenueCat() {
   const [isReady, setIsReady] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
@@ -21,12 +30,7 @@ export function useRevenueCat() {
   useEffect(() => {
     const init = async () => {
       try {
-        if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-        const apiKey = Platform.select({ ios: IOS_KEY, android: ANDROID_KEY }) ?? IOS_KEY;
-        if (!_configured) {
-          Purchases.configure({ apiKey });
-          _configured = true;
-        }
+        configureRevenueCat();
         const o = await Purchases.getOfferings();
         setOfferings(o);
         setIsReady(true);
