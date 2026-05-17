@@ -1,4 +1,5 @@
 import React from "react";
+import { Platform } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { ConvexReactClient } from "convex/react";
@@ -12,12 +13,24 @@ const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
   unsavedChangesWarning: false,
 });
 
-// expo-secure-store adapter — stores the session JWT in iOS Keychain / Android Keystore
-const secureStorage = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-};
+// Native: expo-secure-store (iOS Keychain / Android Keystore).
+// Web: localStorage — expo-secure-store has no web implementation.
+const secureStorage =
+  Platform.OS === "web"
+    ? {
+        getItem: async (key: string) => globalThis.localStorage?.getItem(key) ?? null,
+        setItem: async (key: string, value: string) => {
+          globalThis.localStorage?.setItem(key, value);
+        },
+        removeItem: async (key: string) => {
+          globalThis.localStorage?.removeItem(key);
+        },
+      }
+    : {
+        getItem: (key: string) => SecureStore.getItemAsync(key),
+        setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+        removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+      };
 
 export default function App() {
   return (

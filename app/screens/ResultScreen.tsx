@@ -155,7 +155,7 @@ export default function ResultScreen() {
     fadeAnim.setValue(0);
 
     try {
-      await setAudioModeAsync({ playsInSilentModeIOS: true });
+      await setAudioModeAsync({ playsInSilentMode: true });
       const player = createAudioPlayer(require("../assets/chad.mp3"));
       player.volume = 0;
       player.play();
