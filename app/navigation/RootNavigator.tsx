@@ -5,6 +5,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import AppNavigator from "./AppNavigator";
 import { api } from "../convex/_generated/api";
 import { loginRevenueCat } from "../hooks/useRevenueCat";
+import { providerSignInFlow } from "../lib/authFlow";
 
 export default function RootNavigator() {
   const { isLoading, isAuthenticated } = useConvexAuth();
@@ -19,6 +20,10 @@ export default function RootNavigator() {
       setAuthReady(true);
       return;
     }
+    // Don't fall back to anonymous while a real provider sign-in is mid-flight
+    // (signOut → signIn("google"/"apple")). Otherwise we'd race and reattach the
+    // anonymous session before the new provider session is created.
+    if (providerSignInFlow.isActive()) return;
     signIn("anonymous")
       .catch(() => {})
       .finally(() => setAuthReady(true));

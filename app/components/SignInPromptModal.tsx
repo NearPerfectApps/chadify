@@ -17,6 +17,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import { providerSignInFlow } from "../lib/authFlow";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -37,7 +38,7 @@ const FEATURES = [
 const OFFSCREEN = 700;
 
 export default function SignInPromptModal({ visible, onClose, onSignedIn, title, subtitle }: Props) {
-  const { signIn } = useAuthActions();
+  const { signIn, signOut } = useAuthActions();
   const [loadingApple, setLoadingApple] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   // Controls whether the Modal node is in the tree at all
@@ -120,13 +121,22 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
       return;
     }
     setLoadingGoogle(true);
-    signIn("google", { id_token: idToken })
+    providerSignInFlow.begin();
+    // Sign out of the current (anonymous) session first so the Convex client
+    // cleanly swaps to the new provider token — otherwise reactive queries
+    // don't pick up the new identity until the WebSocket reconnects.
+    signOut()
+      .catch(() => {})
+      .then(() => signIn("google", { id_token: idToken }))
       .then(() => {
         onSignedIn?.();
         handleClose();
       })
       .catch(() => Alert.alert("Sign in failed", "Could not sign in with Google. Please try again."))
-      .finally(() => setLoadingGoogle(false));
+      .finally(() => {
+        providerSignInFlow.end();
+        setLoadingGoogle(false);
+      });
   }, [response, handleClose]);
 
   const handleApple = async () => {
@@ -139,9 +149,15 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
         ],
       });
       if (!credential.identityToken) throw new Error("No identity token received.");
-      await signIn("apple", { id_token: credential.identityToken });
-      onSignedIn?.();
-      handleClose();
+      providerSignInFlow.begin();
+      try {
+        await signOut().catch(() => {});
+        await signIn("apple", { id_token: credential.identityToken });
+        onSignedIn?.();
+        handleClose();
+      } finally {
+        providerSignInFlow.end();
+      }
     } catch (e: any) {
       if (e?.code === "ERR_REQUEST_CANCELED") return;
       Alert.alert("Sign in failed", "Could not sign in with Apple. Please try again.");

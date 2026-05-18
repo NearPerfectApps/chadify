@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { AppStackParamList } from "../navigation/AppNavigator";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -22,7 +24,7 @@ const PRIVACY_URL = "https://www.nearperfectapps.xyz/privacy/chadify";
 const TERMS_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
 
 export default function SettingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { signOut } = useAuthActions();
   const deleteAccount = useMutation(api.users.deleteAccount);
   const { isAnonymous } = useGuest();
@@ -32,7 +34,14 @@ export default function SettingsScreen() {
   const handleSignOut = () => {
     Alert.alert("Sign out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Sign out", style: "destructive", onPress: () => signOut() },
+      {
+        text: "Sign out",
+        style: "destructive",
+        onPress: async () => {
+          await signOut();
+          navigation.popToTop();
+        },
+      },
     ]);
   };
 
