@@ -6,7 +6,7 @@ import GalleryScreen from "../screens/GalleryScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 
 export type AppStackParamList = {
-  Camera: undefined;
+  Camera: { showReviewPrompt?: boolean } | undefined;
   // storageId from Convex storage — uploaded in CameraScreen before navigating
   Result: { userPhotoStorageId: string };
   Gallery: undefined;

@@ -9,13 +9,10 @@ import {
   Alert,
   Animated,
   SafeAreaView,
-  Modal,
 } from "react-native";
 import { setAudioModeAsync, createAudioPlayer, AudioPlayer } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
-import * as SecureStore from "expo-secure-store";
-import * as StoreReview from "expo-store-review";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAction, useMutation } from "convex/react";
@@ -32,7 +29,6 @@ type Nav = NativeStackNavigationProp<AppStackParamList, "Result">;
 type State = "loading" | "revealing" | "success" | "error";
 
 const FADE_OUT_DURATION = 6000;
-const FIRST_GENERATION_REVIEW_PROMPT_KEY = "firstGenerationReviewPromptSeen";
 
 function RotatingMessage() {
   const { strings } = useTranslation();
@@ -82,7 +78,6 @@ export default function ResultScreen() {
   const [errorMessage, setErrorMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [signInPromptVisible, setSignInPromptVisible] = useState(false);
-  const [reviewPromptVisible, setReviewPromptVisible] = useState(false);
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -148,33 +143,9 @@ export default function ResultScreen() {
       }
       completeProgress();
       await playRevealSequence();
-      await maybeShowFirstGenerationReviewPrompt();
     } catch {
       setErrorMessage(t("result.errorGeneric"));
       setState("error");
-    }
-  };
-
-  const maybeShowFirstGenerationReviewPrompt = async () => {
-    try {
-      const alreadySeen = await SecureStore.getItemAsync(FIRST_GENERATION_REVIEW_PROMPT_KEY);
-      if (alreadySeen) return;
-
-      await SecureStore.setItemAsync(FIRST_GENERATION_REVIEW_PROMPT_KEY, "true");
-      setReviewPromptVisible(true);
-    } catch {
-      // Review prompts are non-critical; never block the result screen.
-    }
-  };
-
-  const handleRequestReview = async () => {
-    setReviewPromptVisible(false);
-    try {
-      if (await StoreReview.hasAction()) {
-        await StoreReview.requestReview();
-      }
-    } catch {
-      // Native review availability is best-effort and may be throttled by the stores.
     }
   };
 
@@ -238,7 +209,10 @@ export default function ResultScreen() {
       await MediaLibrary.saveToLibraryAsync(localUri);
       await FileSystem.deleteAsync(localUri, { idempotent: true });
       Alert.alert(t("result.savedTitle"), t("result.savedBody"), [
-        { text: t("common.ok"), onPress: () => navigation.navigate("Camera") },
+        {
+          text: t("common.ok"),
+          onPress: () => navigation.navigate("Camera", { showReviewPrompt: true }),
+        },
       ]);
     } catch {
       Alert.alert(t("common.error"), t("result.saveFailed"));
@@ -326,7 +300,10 @@ export default function ResultScreen() {
             <Text style={styles.primaryButtonText}>{t("result.saveToMyGallery")}</Text>
           )}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.navigate("Camera", { showReviewPrompt: true })}
+        >
           <Text style={styles.secondaryButtonText}>{t("result.retake")}</Text>
         </TouchableOpacity>
       </View>
@@ -338,30 +315,6 @@ export default function ResultScreen() {
         title={t("result.signInPromptTitle")}
         subtitle={t("result.signInPromptSubtitle")}
       />
-
-      <Modal
-        visible={reviewPromptVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setReviewPromptVisible(false)}
-      >
-        <View style={styles.reviewBackdrop}>
-          <View style={styles.reviewCard}>
-            <Text style={styles.reviewStars}>★★★★★</Text>
-            <Text style={styles.reviewTitle}>{t("result.reviewTitle")}</Text>
-            <Text style={styles.reviewBody}>{t("result.reviewBody")}</Text>
-            <TouchableOpacity style={styles.reviewPrimaryButton} onPress={handleRequestReview}>
-              <Text style={styles.reviewPrimaryText}>{t("result.reviewCta")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.reviewSecondaryButton}
-              onPress={() => setReviewPromptVisible(false)}
-            >
-              <Text style={styles.reviewSecondaryText}>{t("result.reviewLater")}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -475,61 +428,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 36,
     lineHeight: 20,
-  },
-  reviewBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.78)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  reviewCard: {
-    width: "100%",
-    backgroundColor: "#111",
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    padding: 24,
-    alignItems: "center",
-  },
-  reviewStars: {
-    color: "#fff",
-    fontSize: 26,
-    letterSpacing: 3,
-    marginBottom: 16,
-  },
-  reviewTitle: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  reviewBody: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  reviewPrimaryButton: {
-    width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: "center",
-  },
-  reviewPrimaryText: {
-    color: "#000",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  reviewSecondaryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  reviewSecondaryText: {
-    color: "rgba(255,255,255,0.38)",
-    fontSize: 14,
   },
 });

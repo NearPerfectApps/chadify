@@ -44,7 +44,11 @@ function resolveLanguage(pref: LanguagePreference): AppLanguage {
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [preference, setPreferenceState] = useState<LanguagePreference>("system");
-  const [language, setLanguage] = useState<AppLanguage>(() => getSystemLanguage());
+  const [language, setLanguage] = useState<AppLanguage>(() => {
+    const initialLanguage = getSystemLanguage();
+    setI18nLocale(initialLanguage);
+    return initialLanguage;
+  });
 
   // Apply locale to i18n-js immediately so any non-React caller (e.g. t() before
   // first render) gets the right strings.
@@ -60,8 +64,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         const pref: LanguagePreference =
           stored === "en" || stored === "fr" || stored === "system" ? stored : "system";
+        const resolvedLanguage = resolveLanguage(pref);
+        setI18nLocale(resolvedLanguage);
         setPreferenceState(pref);
-        setLanguage(resolveLanguage(pref));
+        setLanguage(resolvedLanguage);
       })
       .catch(() => {
         // Fall back to the system default we already set.
@@ -72,8 +78,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setPreference = useCallback(async (pref: LanguagePreference) => {
+    const resolvedLanguage = resolveLanguage(pref);
+    setI18nLocale(resolvedLanguage);
     setPreferenceState(pref);
-    setLanguage(resolveLanguage(pref));
+    setLanguage(resolvedLanguage);
     try {
       await SecureStore.setItemAsync(STORAGE_KEY, pref);
     } catch {

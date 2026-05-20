@@ -13,7 +13,8 @@ import {
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
-import { useNavigation } from "@react-navigation/native";
+import * as StoreReview from "expo-store-review";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -24,12 +25,15 @@ import { useTranslation } from "../context/LanguageContext";
 import SignInPromptModal from "../components/SignInPromptModal";
 
 const AI_CONSENT_KEY = "aiConsentGiven";
+const FIRST_GENERATION_REVIEW_PROMPT_KEY = "firstGenerationReviewPromptSeen";
 const PRIVACY_URL = "https://www.nearperfectapps.xyz/privacy/chadify";
 
+type RouteProps = RouteProp<AppStackParamList, "Camera">;
 type Nav = NativeStackNavigationProp<AppStackParamList, "Camera">;
 
 export default function CameraScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<RouteProps>();
   const { t } = useTranslation();
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const [permission, requestPermission] = useCameraPermissions();
@@ -39,6 +43,7 @@ export default function CameraScreen() {
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [consentVisible, setConsentVisible] = useState(false);
   const [signInPromptVisible, setSignInPromptVisible] = useState(false);
+  const [reviewPromptVisible, setReviewPromptVisible] = useState(false);
   const { isAnonymous } = useGuest();
   const cameraRef = useRef<CameraView>(null);
   const entitlements = useQuery(api.entitlements.getMyEntitlements);
@@ -69,6 +74,35 @@ export default function CameraScreen() {
       if (!value) setConsentVisible(true);
     });
   }, []);
+
+  useEffect(() => {
+    if (!route.params?.showReviewPrompt) return;
+    navigation.setParams({ showReviewPrompt: undefined });
+    maybeShowFirstGenerationReviewPrompt();
+  }, [route.params?.showReviewPrompt]);
+
+  const maybeShowFirstGenerationReviewPrompt = async () => {
+    try {
+      const alreadySeen = await SecureStore.getItemAsync(FIRST_GENERATION_REVIEW_PROMPT_KEY);
+      if (alreadySeen) return;
+
+      await SecureStore.setItemAsync(FIRST_GENERATION_REVIEW_PROMPT_KEY, "true");
+      setReviewPromptVisible(true);
+    } catch {
+      // Review prompts are non-critical; never block the camera screen.
+    }
+  };
+
+  const handleRequestReview = async () => {
+    setReviewPromptVisible(false);
+    try {
+      if (await StoreReview.hasAction()) {
+        await StoreReview.requestReview();
+      }
+    } catch {
+      // Native review availability is best-effort and may be throttled by the stores.
+    }
+  };
 
   if (!permission) {
     return (
@@ -197,6 +231,30 @@ export default function CameraScreen() {
         title={t("camera.signInPromptTitle")}
         subtitle={t("camera.signInPromptSubtitle")}
       />
+
+      <Modal
+        visible={reviewPromptVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReviewPromptVisible(false)}
+      >
+        <View style={styles.reviewBackdrop}>
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewStars}>★★★★★</Text>
+            <Text style={styles.reviewTitle}>{t("result.reviewTitle")}</Text>
+            <Text style={styles.reviewBody}>{t("result.reviewBody")}</Text>
+            <TouchableOpacity style={styles.reviewPrimaryButton} onPress={handleRequestReview}>
+              <Text style={styles.reviewPrimaryText}>{t("result.reviewCta")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.reviewSecondaryButton}
+              onPress={() => setReviewPromptVisible(false)}
+            >
+              <Text style={styles.reviewSecondaryText}>{t("result.reviewLater")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
         <SafeAreaView style={styles.overlay}>
@@ -450,5 +508,61 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 16,
     fontWeight: "700",
+  },
+  reviewBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.78)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  reviewCard: {
+    width: "100%",
+    backgroundColor: "#111",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    padding: 24,
+    alignItems: "center",
+  },
+  reviewStars: {
+    color: "#fff",
+    fontSize: 26,
+    letterSpacing: 3,
+    marginBottom: 16,
+  },
+  reviewTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  reviewBody: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  reviewPrimaryButton: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  reviewPrimaryText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  reviewSecondaryButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  reviewSecondaryText: {
+    color: "rgba(255,255,255,0.38)",
+    fontSize: 14,
   },
 });
