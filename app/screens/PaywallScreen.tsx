@@ -12,6 +12,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { PurchasesPackage } from "react-native-purchases";
 import { useRevenueCat } from "../hooks/useRevenueCat";
+import { useTranslation } from "../context/LanguageContext";
 
 type Props = {
   onClose: () => void;
@@ -27,47 +28,56 @@ type Section = {
   }[];
 };
 
-const SECTIONS: Section[] = [
-  {
-    title: "CREDIT PACKS",
-    items: [
-      { productId: "chadify_credits_10", label: "10 Credits", description: "10 transformations" },
-      { productId: "chadify_credits_50", label: "50 Credits", description: "50 transformations · Best value" },
-    ],
-  },
-  {
-    title: "SUBSCRIPTION",
-    items: [
-      {
-        productId: "chadify_subscription_monthly",
-        label: "Monthly",
-        description: "100 credits per month",
-      },
-      {
-        productId: "chadify_subscription_annual",
-        label: "Annual",
-        description: "100 credits per month · Save ~17%",
-        highlight: true,
-      },
-    ],
-  },
-  {
-    title: "UNLIMITED",
-    items: [
-      {
-        productId: "chadify_lifetime",
-        label: "Lifetime Pass",
-        description: "Unlimited transformations forever",
-        highlight: true,
-      },
-    ],
-  },
-];
-
 export default function PaywallScreen({ onClose }: Props) {
   const { offerings, purchase, restorePurchases, getPackage, isReady, entitlements } =
     useRevenueCat();
+  const { t } = useTranslation();
   const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const sections: Section[] = [
+    {
+      title: t("paywall.sectionCredits"),
+      items: [
+        {
+          productId: "chadify_credits_10",
+          label: t("paywall.credits10Label"),
+          description: t("paywall.credits10Desc"),
+        },
+        {
+          productId: "chadify_credits_50",
+          label: t("paywall.credits50Label"),
+          description: t("paywall.credits50Desc"),
+        },
+      ],
+    },
+    {
+      title: t("paywall.sectionSubscription"),
+      items: [
+        {
+          productId: "chadify_subscription_monthly",
+          label: t("paywall.monthlyLabel"),
+          description: t("paywall.monthlyDesc"),
+        },
+        {
+          productId: "chadify_subscription_annual",
+          label: t("paywall.annualLabel"),
+          description: t("paywall.annualDesc"),
+          highlight: true,
+        },
+      ],
+    },
+    {
+      title: t("paywall.sectionUnlimited"),
+      items: [
+        {
+          productId: "chadify_lifetime",
+          label: t("paywall.lifetimeLabel"),
+          description: t("paywall.lifetimeDesc"),
+          highlight: true,
+        },
+      ],
+    },
+  ];
 
   const handlePurchase = async (productId: string) => {
     const pkg = getPackage(productId);
@@ -93,7 +103,7 @@ export default function PaywallScreen({ onClose }: Props) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <View style={styles.headerLeft} />
-        <Text style={styles.title}>CHADIFY PRO</Text>
+        <Text style={styles.title}>{t("paywall.title")}</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Feather name="x" size={20} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
@@ -102,19 +112,26 @@ export default function PaywallScreen({ onClose }: Props) {
       {entitlements && (
         <View style={styles.statusBadge}>
           {entitlements.lifetimeAccess ? (
-            <Text style={styles.statusText}>∞ Lifetime access active</Text>
+            <Text style={styles.statusText}>{t("paywall.statusLifetime")}</Text>
           ) : entitlements.credits > 0 ? (
-            <Text style={styles.statusText}>◆ {entitlements.credits} credits remaining</Text>
+            <Text style={styles.statusText}>
+              {t(
+                entitlements.credits === 1
+                  ? "paywall.statusCreditsOne"
+                  : "paywall.statusCreditsOther",
+                { count: entitlements.credits }
+              )}
+            </Text>
           ) : (
-            <Text style={styles.statusText}>Free tier · 1 generation per 6 hours</Text>
+            <Text style={styles.statusText}>{t("paywall.statusFreeTier")}</Text>
           )}
         </View>
       )}
 
-      <Text style={styles.subtitle}>Purchase credits or subscribe for unlimited transforms</Text>
+      <Text style={styles.subtitle}>{t("paywall.subtitle")}</Text>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {SECTIONS.map((section) => (
+        {sections.map((section) => (
           <View key={section.title} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
             {section.items.map((item) => (
@@ -146,20 +163,18 @@ export default function PaywallScreen({ onClose }: Props) {
         ))}
 
         <TouchableOpacity style={styles.restoreButton} onPress={restorePurchases}>
-          <Text style={styles.restoreText}>Restore purchases</Text>
+          <Text style={styles.restoreText}>{t("paywall.restore")}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.legal}>
-          Subscriptions renew automatically. Cancel anytime in your App Store settings.
-        </Text>
+        <Text style={styles.legal}>{t("paywall.legal")}</Text>
 
         <View style={styles.legalLinks}>
           <TouchableOpacity onPress={() => Linking.openURL("https://www.nearperfectapps.xyz/privacy/chadify")}>
-            <Text style={styles.legalLink}>Privacy Policy</Text>
+            <Text style={styles.legalLink}>{t("paywall.privacyPolicy")}</Text>
           </TouchableOpacity>
           <Text style={styles.legalLinkSeparator}>·</Text>
           <TouchableOpacity onPress={() => Linking.openURL("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")}>
-            <Text style={styles.legalLink}>Terms of Use</Text>
+            <Text style={styles.legalLink}>{t("paywall.termsOfUse")}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

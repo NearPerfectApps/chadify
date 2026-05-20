@@ -18,6 +18,7 @@ import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { providerSignInFlow } from "../lib/authFlow";
+import { useTranslation } from "../context/LanguageContext";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -29,16 +30,12 @@ type Props = {
   subtitle?: string;
 };
 
-const FEATURES = [
-  { label: "Gallery", description: "Save & revisit all your transformations" },
-  { label: "Cloud saves", description: "Your chads are safe, forever" },
-  { label: "Credits & upgrades", description: "Unlock unlimited chadification" },
-];
-
 const OFFSCREEN = 700;
 
 export default function SignInPromptModal({ visible, onClose, onSignedIn, title, subtitle }: Props) {
   const { signIn, signOut } = useAuthActions();
+  const { t, strings } = useTranslation();
+  const features = strings.signInPrompt.features;
   const [loadingApple, setLoadingApple] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   // Controls whether the Modal node is in the tree at all
@@ -117,7 +114,7 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
     if (response?.type !== "success") return;
     const idToken = response.authentication?.idToken;
     if (!idToken) {
-      Alert.alert("Sign in failed", "No ID token received from Google.");
+      Alert.alert(t("signInPrompt.failedTitle"), t("signInPrompt.failedGeneric"));
       return;
     }
     setLoadingGoogle(true);
@@ -132,7 +129,7 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
         onSignedIn?.();
         handleClose();
       })
-      .catch(() => Alert.alert("Sign in failed", "Could not sign in with Google. Please try again."))
+      .catch(() => Alert.alert(t("signInPrompt.failedTitle"), t("signInPrompt.failedGoogle")))
       .finally(() => {
         providerSignInFlow.end();
         setLoadingGoogle(false);
@@ -160,7 +157,7 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
       }
     } catch (e: any) {
       if (e?.code === "ERR_REQUEST_CANCELED") return;
-      Alert.alert("Sign in failed", "Could not sign in with Apple. Please try again.");
+      Alert.alert(t("signInPrompt.failedTitle"), t("signInPrompt.failedApple"));
     } finally {
       setLoadingApple(false);
     }
@@ -168,18 +165,23 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
 
   const handleGoogle = async () => {
     if (!googleIosClientId && Platform.OS === "ios") {
-      Alert.alert("Configuration error", "Google Sign-In is not configured for this build.");
+      Alert.alert(t("signInPrompt.failedTitle"), t("signInPrompt.failedGoogle"));
       return;
     }
     if (!googleAndroidClientId && Platform.OS === "android") {
-      Alert.alert("Configuration error", "Google Sign-In is not configured for this build.");
+      Alert.alert(t("signInPrompt.failedTitle"), t("signInPrompt.failedGoogle"));
       return;
     }
     setLoadingGoogle(true);
     try {
-      await promptAsync();
+      const result = await promptAsync();
+      // Reset loading if user cancelled (type is "dismiss" or "cancel")
+      if (result?.type !== "success") {
+        setLoadingGoogle(false);
+      }
+      // success is handled in the useEffect above
     } catch {
-      Alert.alert("Sign in failed", "Could not sign in with Google. Please try again.");
+      Alert.alert(t("signInPrompt.failedTitle"), t("signInPrompt.failedGoogle"));
       setLoadingGoogle(false);
     }
   };
@@ -199,13 +201,13 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
           <View style={styles.handle} />
         </View>
 
-        <Text style={styles.title}>{title ?? "Unlock Your Full Chad Experience"}</Text>
+        <Text style={styles.title}>{title ?? t("signInPrompt.defaultTitle")}</Text>
         <Text style={styles.subtitle}>
-          {subtitle ?? "Sign in to save your transformations and access all features"}
+          {subtitle ?? t("signInPrompt.defaultSubtitle")}
         </Text>
 
         <View style={styles.features}>
-          {FEATURES.map((f) => (
+          {features.map((f) => (
             <View key={f.label} style={styles.featureRow}>
               <View style={styles.featureText}>
                 <Text style={styles.featureLabel}>{f.label}</Text>
@@ -237,13 +239,13 @@ export default function SignInPromptModal({ visible, onClose, onSignedIn, title,
             ) : (
               <>
                 <AntDesign name="google" size={20} color="#000" style={styles.googleIcon} />
-                <Text style={styles.googleButtonText}>Sign in with Google</Text>
+                <Text style={styles.googleButtonText}>{t("signInPrompt.signInWithGoogle")}</Text>
               </>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.dismissButton} onPress={handleClose} activeOpacity={0.7}>
-            <Text style={styles.dismissText}>Maybe later</Text>
+            <Text style={styles.dismissText}>{t("signInPrompt.maybeLater")}</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>

@@ -19,22 +19,18 @@ import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import type { AppStackParamList } from "../navigation/AppNavigator";
 import { useGuest } from "../context/GuestContext";
+import { useTranslation } from "../context/LanguageContext";
 import SignInPromptModal from "../components/SignInPromptModal";
 
 type RouteProps = RouteProp<AppStackParamList, "Result">;
 
 type State = "loading" | "revealing" | "success" | "error";
 
-const MESSAGES = [
-  "Chadifying your appearance...",
-  "Maximizing jaw definition...",
-  "Applying gigachad energy...",
-  "Unleashing your inner chad...",
-];
-
 const FADE_OUT_DURATION = 6000;
 
 function RotatingMessage() {
+  const { strings } = useTranslation();
+  const messages = strings.result.messages;
   const [index, setIndex] = useState(0);
   const opacity = useRef(new Animated.Value(1)).current;
 
@@ -45,7 +41,7 @@ function RotatingMessage() {
         duration: 400,
         useNativeDriver: true,
       }).start(() => {
-        setIndex((i) => (i + 1) % MESSAGES.length);
+        setIndex((i) => (i + 1) % messages.length);
         Animated.timing(opacity, {
           toValue: 1,
           duration: 400,
@@ -55,11 +51,11 @@ function RotatingMessage() {
     };
     const id = setInterval(cycle, 2200);
     return () => clearInterval(id);
-  }, []);
+  }, [messages.length]);
 
   return (
     <Animated.Text style={[styles.loadingTitle, { opacity }]}>
-      {MESSAGES[index]}
+      {messages[index]}
     </Animated.Text>
   );
 }
@@ -67,6 +63,7 @@ function RotatingMessage() {
 export default function ResultScreen() {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const { userPhotoStorageId } = route.params;
 
   const chadify = useAction(api.actions.chadify.run);
@@ -142,10 +139,8 @@ export default function ResultScreen() {
       }
       completeProgress();
       await playRevealSequence();
-    } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Something went wrong"
-      );
+    } catch {
+      setErrorMessage(t("result.errorGeneric"));
       setState("error");
     }
   };
@@ -209,11 +204,11 @@ export default function ResultScreen() {
       const { uri: localUri } = await FileSystem.downloadAsync(resultUri, localPath);
       await MediaLibrary.saveToLibraryAsync(localUri);
       await FileSystem.deleteAsync(localUri, { idempotent: true });
-      Alert.alert("Saved!", "Your chad transformation is in your photo library.", [
-        { text: "OK", onPress: () => navigation.navigate("Camera" as any) },
+      Alert.alert(t("result.savedTitle"), t("result.savedBody"), [
+        { text: t("common.ok"), onPress: () => navigation.navigate("Camera" as any) },
       ]);
     } catch {
-      Alert.alert("Error", "Failed to save. Please try again.");
+      Alert.alert(t("common.error"), t("result.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -226,9 +221,9 @@ export default function ResultScreen() {
       await savePending({ storageId: pendingStorageId });
       clearPendingResult();
       setPendingStorageId(null);
-      Alert.alert("Saved to gallery!", "Your transformation is now in your gallery.", [
-        { text: "View Gallery", onPress: () => navigation.navigate("Gallery" as any) },
-        { text: "OK" },
+      Alert.alert(t("result.savedToGalleryTitle"), t("result.savedToGalleryBody"), [
+        { text: t("result.viewGallery"), onPress: () => navigation.navigate("Gallery" as any) },
+        { text: t("common.ok") },
       ]);
     } catch {
       // Non-fatal — the image is still viewable
@@ -240,7 +235,7 @@ export default function ResultScreen() {
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#fff" />
         <RotatingMessage />
-        <Text style={styles.loadingSubtitle}>This may take a moment</Text>
+        <Text style={styles.loadingSubtitle}>{t("result.loadingSubtitle")}</Text>
         <View style={styles.progressBarContainer}>
           <Animated.View
             style={[
@@ -254,7 +249,7 @@ export default function ResultScreen() {
             ]}
           />
         </View>
-        <Text style={styles.progressHint}>~20 seconds</Text>
+        <Text style={styles.progressHint}>{t("result.progressHint")}</Text>
       </View>
     );
   }
@@ -262,13 +257,13 @@ export default function ResultScreen() {
   if (state === "error") {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorTitle}>Transformation Failed</Text>
+        <Text style={styles.errorTitle}>{t("result.errorTitle")}</Text>
         <Text style={styles.errorMessage}>{errorMessage}</Text>
         <TouchableOpacity style={styles.primaryButton} onPress={runChadify}>
-          <Text style={styles.primaryButtonText}>Try Again</Text>
+          <Text style={styles.primaryButtonText}>{t("common.retry")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.secondaryButtonText}>Retake Photo</Text>
+          <Text style={styles.secondaryButtonText}>{t("result.retakePhoto")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -276,7 +271,7 @@ export default function ResultScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Text style={styles.successTitle}>GIGACHAD UNLOCKED</Text>
+      <Text style={styles.successTitle}>{t("result.successTitle")}</Text>
       <Animated.View style={[styles.imageWrapper, { opacity: fadeAnim }]}>
         {resultUri && (
           <Image
@@ -295,11 +290,11 @@ export default function ResultScreen() {
           {saving ? (
             <ActivityIndicator color="#000" />
           ) : (
-            <Text style={styles.primaryButtonText}>Save to My Gallery</Text>
+            <Text style={styles.primaryButtonText}>{t("result.saveToMyGallery")}</Text>
           )}
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.secondaryButtonText}>Retake</Text>
+          <Text style={styles.secondaryButtonText}>{t("result.retake")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -307,8 +302,8 @@ export default function ResultScreen() {
         visible={signInPromptVisible}
         onClose={() => setSignInPromptVisible(false)}
         onSignedIn={handleAfterSignIn}
-        title="Save Your Chad"
-        subtitle="Sign in to save this transformation to your gallery and access it anytime"
+        title={t("result.signInPromptTitle")}
+        subtitle={t("result.signInPromptSubtitle")}
       />
     </SafeAreaView>
   );

@@ -7,6 +7,7 @@ import Purchases, {
 } from "react-native-purchases";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
+import { t } from "../lib/i18n";
 
 const IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "";
 const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? "";
@@ -59,7 +60,7 @@ export function useRevenueCat() {
       // Credits are granted via webhook → Convex → reactive useQuery update
     } catch (e: any) {
       if (!e.userCancelled) {
-        Alert.alert("Purchase failed", e.message ?? "Please try again.");
+        Alert.alert(t("paywall.purchaseFailed"), e.message ?? t("paywall.pleaseTryAgain"));
         throw e;
       }
     }
@@ -68,9 +69,9 @@ export function useRevenueCat() {
   const restorePurchases = async () => {
     try {
       await Purchases.restorePurchases();
-      Alert.alert("Purchases restored", "Your purchases have been restored.");
+      Alert.alert(t("paywall.restoredTitle"), t("paywall.restoredBody"));
     } catch (e: any) {
-      Alert.alert("Restore failed", e.message ?? "Please try again.");
+      Alert.alert(t("paywall.restoreFailed"), e.message ?? t("paywall.pleaseTryAgain"));
     }
   };
 

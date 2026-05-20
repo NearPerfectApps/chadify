@@ -1,0 +1,168 @@
+import type { Translations } from "./en";
+
+const fr: Translations = {
+  common: {
+    error: "Erreur",
+    cancel: "Annuler",
+    ok: "OK",
+    delete: "Supprimer",
+    retry: "Réessayer",
+    close: "Fermer",
+  },
+
+  camera: {
+    permissionText: "L'accès à la caméra est nécessaire pour te chadifier",
+    continue: "Continuer",
+    getCredits: "◆  Obtenir des crédits",
+    lifetime: "∞  À vie",
+    creditsOne: "◆  {{count}} crédit",
+    creditsOther: "◆  {{count}} crédits",
+    countdown: "⏱  {{time}}",
+    gallery: "⊞  Galerie",
+    consent: {
+      title: "Avant de commencer",
+      body1Prefix: "Pour transformer ta photo, Chadify l'envoie à ",
+      body1Brand: "Google Gemini AI",
+      body1Suffix:
+        " pour traitement. Ta photo originale est supprimée immédiatement après la génération — seul le résultat est conservé.",
+      body2:
+        "En continuant, tu acceptes ce traitement des données comme décrit dans notre Politique de confidentialité.",
+      readPolicy: "Lire la politique de confidentialité",
+      agree: "J'accepte",
+    },
+    signInPromptTitle: "Débloque toute l'expérience Chad",
+    signInPromptSubtitle:
+      "Connecte-toi pour accéder à ta galerie, acheter des crédits et sauvegarder toutes tes transformations",
+  },
+
+  result: {
+    messages: [
+      "Chadification en cours...",
+      "Maximisation de la mâchoire...",
+      "Application de l'énergie gigachad...",
+      "Libération de ton chad intérieur...",
+    ],
+    loadingSubtitle: "Cela peut prendre un instant",
+    progressHint: "~20 secondes",
+    errorTitle: "Échec de la transformation",
+    errorGeneric: "Une erreur est survenue. Merci de réessayer.",
+    retakePhoto: "Reprendre la photo",
+    successTitle: "GIGACHAD DÉBLOQUÉ",
+    saveToMyGallery: "Enregistrer dans ma galerie",
+    retake: "Reprendre",
+    savedTitle: "Enregistré !",
+    savedBody: "Ta transformation est dans ta photothèque.",
+    savedToGalleryTitle: "Enregistré dans la galerie !",
+    savedToGalleryBody: "Ta transformation est maintenant dans ta galerie.",
+    viewGallery: "Voir la galerie",
+    saveFailed: "Échec de l'enregistrement. Merci de réessayer.",
+    signInPromptTitle: "Sauvegarde ton Chad",
+    signInPromptSubtitle:
+      "Connecte-toi pour enregistrer cette transformation dans ta galerie et y accéder à tout moment",
+  },
+
+  login: {
+    subtitle: "Connecte-toi pour te transformer",
+    continueWithGoogle: "Continuer avec Google",
+    failedTitle: "Échec de la connexion",
+    failedGeneric: "Une erreur est survenue. Merci de réessayer.",
+    failedGoogle: "Connexion Google impossible. Merci de réessayer.",
+    failedApple: "Connexion Apple impossible. Merci de réessayer.",
+  },
+
+  paywall: {
+    title: "CHADIFY PRO",
+    statusLifetime: "∞ Accès à vie activé",
+    statusCreditsOne: "◆ {{count}} crédit restant",
+    statusCreditsOther: "◆ {{count}} crédits restants",
+    statusFreeTier: "Offre gratuite · 1 génération toutes les 6 h",
+    subtitle: "Achète des crédits ou abonne-toi pour des transformations illimitées",
+    sectionCredits: "PACKS DE CRÉDITS",
+    sectionSubscription: "ABONNEMENT",
+    sectionUnlimited: "ILLIMITÉ",
+    credits10Label: "10 crédits",
+    credits10Desc: "10 transformations",
+    credits50Label: "50 crédits",
+    credits50Desc: "50 transformations · Meilleure offre",
+    monthlyLabel: "Mensuel",
+    monthlyDesc: "100 crédits par mois",
+    annualLabel: "Annuel",
+    annualDesc: "100 crédits par mois · Économise ~17 %",
+    lifetimeLabel: "Pass à vie",
+    lifetimeDesc: "Transformations illimitées pour toujours",
+    restore: "Restaurer les achats",
+    restoredTitle: "Achats restaurés",
+    restoredBody: "Tes achats ont été restaurés.",
+    restoreFailed: "Échec de la restauration",
+    legal:
+      "Les abonnements se renouvellent automatiquement. Annulation à tout moment dans les réglages de l'App Store.",
+    privacyPolicy: "Politique de confidentialité",
+    termsOfUse: "Conditions d'utilisation",
+    purchaseFailed: "Échec de l'achat",
+    pleaseTryAgain: "Merci de réessayer.",
+  },
+
+  settings: {
+    title: "RÉGLAGES",
+    sectionLanguage: "LANGUE",
+    languageLabel: "Langue",
+    languageEnglish: "English",
+    languageFrench: "Français",
+    languageSystem: "Système",
+    languageNote: "Choisis la langue d'affichage de l'app.",
+    sectionLegal: "MENTIONS LÉGALES",
+    privacyPolicy: "Politique de confidentialité",
+    termsOfUse: "Conditions d'utilisation",
+    sectionAccount: "COMPTE",
+    createAccount: "Créer un compte",
+    signOut: "Se déconnecter",
+    signOutConfirmTitle: "Se déconnecter",
+    signOutConfirmBody: "Es-tu sûr de vouloir te déconnecter ?",
+    deleteAccount: "Supprimer le compte",
+    deleteAccountConfirmTitle: "Supprimer le compte",
+    deleteAccountConfirmBody:
+      "Cela supprimera définitivement ton compte et toutes tes transformations. Cette action est irréversible.",
+    deleteAccountFinalTitle: "Es-tu vraiment sûr ?",
+    deleteAccountFinalBody:
+      "Toutes tes données seront supprimées immédiatement et ne pourront pas être récupérées.",
+    deleteAccountFinalConfirm: "Oui, tout supprimer",
+    deleteAccountFailed: "Échec de la suppression. Merci de réessayer.",
+    signInPromptTitle: "Crée ton compte",
+    signInPromptSubtitle:
+      "Connecte-toi pour sauvegarder tes transformations et débloquer toutes les fonctionnalités",
+  },
+
+  gallery: {
+    title: "TES CHADS",
+    emptyTitle: "Aucune transformation pour l'instant.",
+    emptySubtitle: "Prends une photo pour te chadifier.",
+    deleteConfirmTitle: "Supprimer",
+    deleteConfirmBody: "Supprimer cette transformation définitivement ?",
+    shareFailed: "Échec du partage. Merci de réessayer.",
+    deleteFailed: "Échec de la suppression. Merci de réessayer.",
+    share: "Partager",
+    delete: "Supprimer",
+    signInPromptTitle: "Ta galerie t'attend",
+    signInPromptSubtitle:
+      "Connecte-toi pour sauvegarder et revoir toutes tes transformations chad",
+  },
+
+  signInPrompt: {
+    defaultTitle: "Débloque toute l'expérience Chad",
+    defaultSubtitle:
+      "Connecte-toi pour sauvegarder tes transformations et accéder à toutes les fonctionnalités",
+    features: [
+      { label: "Galerie", description: "Sauvegarde et revisite toutes tes transformations" },
+      { label: "Sauvegarde cloud", description: "Tes chads sont à l'abri, pour toujours" },
+      { label: "Crédits et upgrades", description: "Débloque la chadification illimitée" },
+    ],
+    signInWithGoogle: "Se connecter avec Google",
+    maybeLater: "Plus tard",
+    failedTitle: "Échec de la connexion",
+    failedGeneric: "Une erreur est survenue. Merci de réessayer.",
+    failedGoogle: "Connexion Google impossible. Merci de réessayer.",
+    failedApple: "Connexion Apple impossible. Merci de réessayer.",
+  },
+};
+
+export default fr;

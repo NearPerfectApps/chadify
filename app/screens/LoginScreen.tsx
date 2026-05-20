@@ -14,12 +14,14 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import { useTranslation } from "../context/LanguageContext";
 
 // Required for the OAuth redirect to complete properly on native
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const { signIn } = useAuthActions();
+  const { t } = useTranslation();
   const [loadingApple, setLoadingApple] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
 
@@ -42,12 +44,12 @@ export default function LoginScreen() {
     if (response?.type !== "success") return;
     const idToken = response.authentication?.idToken;
     if (!idToken) {
-      Alert.alert("Sign in failed", "No ID token received from Google.");
+      Alert.alert(t("login.failedTitle"), t("login.failedGeneric"));
       return;
     }
     setLoadingGoogle(true);
     signIn("google", { id_token: idToken })
-      .catch(() => Alert.alert("Sign in failed", "Could not sign in with Google. Please try again."))
+      .catch(() => Alert.alert(t("login.failedTitle"), t("login.failedGoogle")))
       .finally(() => setLoadingGoogle(false));
   }, [response]);
 
@@ -64,7 +66,7 @@ export default function LoginScreen() {
       await signIn("apple", { id_token: credential.identityToken });
     } catch (e: any) {
       if (e?.code === "ERR_REQUEST_CANCELED") return; // user dismissed
-      Alert.alert("Sign in failed", "Could not sign in with Apple. Please try again.");
+      Alert.alert(t("login.failedTitle"), t("login.failedApple"));
     } finally {
       setLoadingApple(false);
     }
@@ -72,19 +74,23 @@ export default function LoginScreen() {
 
   const handleGoogle = async () => {
     if (!googleIosClientId && Platform.OS === "ios") {
-      Alert.alert("Configuration error", "Google Sign-In is not configured for this build.");
+      Alert.alert(t("login.failedTitle"), t("login.failedGoogle"));
       return;
     }
     if (!googleAndroidClientId && Platform.OS === "android") {
-      Alert.alert("Configuration error", "Google Sign-In is not configured for this build.");
+      Alert.alert(t("login.failedTitle"), t("login.failedGoogle"));
       return;
     }
     setLoadingGoogle(true);
     try {
-      await promptAsync();
-      // result handled in the useEffect above
+      const result = await promptAsync();
+      // Reset loading if user cancelled (type is "dismiss" or "cancel")
+      if (result?.type !== "success") {
+        setLoadingGoogle(false);
+      }
+      // success is handled in the useEffect above
     } catch {
-      Alert.alert("Sign in failed", "Could not sign in with Google. Please try again.");
+      Alert.alert(t("login.failedTitle"), t("login.failedGoogle"));
       setLoadingGoogle(false);
     }
   };
@@ -94,7 +100,7 @@ export default function LoginScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>CHADIFY</Text>
-          <Text style={styles.subtitle}>Sign in to transform yourself</Text>
+          <Text style={styles.subtitle}>{t("login.subtitle")}</Text>
         </View>
 
         <View style={styles.buttons}>
@@ -117,7 +123,7 @@ export default function LoginScreen() {
             {loadingGoogle ? (
               <ActivityIndicator color="#000" size="small" />
             ) : (
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <Text style={styles.googleButtonText}>{t("login.continueWithGoogle")}</Text>
             )}
           </TouchableOpacity>
         </View>

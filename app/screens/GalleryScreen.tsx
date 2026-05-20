@@ -23,6 +23,7 @@ import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import type { AppStackParamList } from "../navigation/AppNavigator";
 import { useGuest } from "../context/GuestContext";
+import { useTranslation } from "../context/LanguageContext";
 import SignInPromptModal from "../components/SignInPromptModal";
 
 type Nav = NativeStackNavigationProp<AppStackParamList, "Gallery">;
@@ -43,6 +44,7 @@ type SelectedItem = { id: Id<"transformations">; url: string };
 
 export default function GalleryScreen() {
   const navigation = useNavigation<Nav>();
+  const { t } = useTranslation();
   const removeTransformation = useMutation(api.transformations.remove);
   const { isAnonymous } = useGuest();
 
@@ -70,7 +72,7 @@ export default function GalleryScreen() {
       await Share.share({ url: uri });
       await FileSystem.deleteAsync(uri, { idempotent: true });
     } catch {
-      Alert.alert("Error", "Failed to share. Please try again.");
+      Alert.alert(t("common.error"), t("gallery.shareFailed"));
     } finally {
       setSharing(false);
     }
@@ -78,10 +80,10 @@ export default function GalleryScreen() {
 
   const handleDelete = () => {
     if (!selected) return;
-    Alert.alert("Delete", "Remove this transformation permanently?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("gallery.deleteConfirmTitle"), t("gallery.deleteConfirmBody"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           setDeleting(true);
@@ -89,7 +91,7 @@ export default function GalleryScreen() {
             await removeTransformation({ id: selected.id });
             setSelected(null);
           } catch {
-            Alert.alert("Error", "Failed to delete. Please try again.");
+            Alert.alert(t("common.error"), t("gallery.deleteFailed"));
           } finally {
             setDeleting(false);
           }
@@ -122,7 +124,7 @@ export default function GalleryScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>YOUR CHADS</Text>
+        <Text style={styles.title}>{t("gallery.title")}</Text>
         <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.settingsButton}>
           <Feather name="settings" size={20} color="rgba(255,255,255,0.5)" />
         </TouchableOpacity>
@@ -134,8 +136,8 @@ export default function GalleryScreen() {
         </View>
       ) : results.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No transformations yet.</Text>
-          <Text style={styles.emptySubtext}>Take a photo to get chadified.</Text>
+          <Text style={styles.emptyText}>{t("gallery.emptyTitle")}</Text>
+          <Text style={styles.emptySubtext}>{t("gallery.emptySubtitle")}</Text>
         </View>
       ) : (
         <FlatList
@@ -165,8 +167,8 @@ export default function GalleryScreen() {
       <SignInPromptModal
         visible={signInPromptVisible}
         onClose={() => { setSignInPromptVisible(false); navigation.goBack(); }}
-        title="Your Gallery Awaits"
-        subtitle="Sign in to save and revisit all your chad transformations"
+        title={t("gallery.signInPromptTitle")}
+        subtitle={t("gallery.signInPromptSubtitle")}
       />
 
       <Modal
@@ -205,7 +207,7 @@ export default function GalleryScreen() {
                 ) : (
                   <>
                     <Feather name="share" size={16} color="#000" style={styles.buttonIcon} />
-                    <Text style={styles.modalButtonText}>Share</Text>
+                    <Text style={styles.modalButtonText}>{t("gallery.share")}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -221,7 +223,7 @@ export default function GalleryScreen() {
                 ) : (
                   <>
                     <Feather name="trash-2" size={16} color="#ff4c4c" style={styles.buttonIcon} />
-                    <Text style={styles.modalButtonDestructiveText}>Delete</Text>
+                    <Text style={styles.modalButtonDestructiveText}>{t("gallery.delete")}</Text>
                   </>
                 )}
               </TouchableOpacity>

@@ -7,6 +7,7 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import * as SecureStore from "expo-secure-store";
 import RootNavigator from "./navigation/RootNavigator";
 import { GuestProvider } from "./context/GuestContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import { configureRevenueCat } from "./hooks/useRevenueCat";
 
 if (Platform.OS !== "web") {
@@ -40,12 +41,14 @@ const secureStorage =
 export default function App() {
   return (
     <ConvexAuthProvider client={convex} storage={secureStorage}>
-      <GuestProvider>
-        <NavigationContainer>
-          <StatusBar style="light" />
-          <RootNavigator />
-        </NavigationContainer>
-      </GuestProvider>
+      <LanguageProvider>
+        <GuestProvider>
+          <NavigationContainer>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </NavigationContainer>
+        </GuestProvider>
+      </LanguageProvider>
     </ConvexAuthProvider>
   );
 }

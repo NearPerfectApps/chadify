@@ -20,6 +20,7 @@ import { api } from "../convex/_generated/api";
 import type { AppStackParamList } from "../navigation/AppNavigator";
 import PaywallScreen from "./PaywallScreen";
 import { useGuest } from "../context/GuestContext";
+import { useTranslation } from "../context/LanguageContext";
 import SignInPromptModal from "../components/SignInPromptModal";
 
 const AI_CONSENT_KEY = "aiConsentGiven";
@@ -29,6 +30,7 @@ type Nav = NativeStackNavigationProp<AppStackParamList, "Camera">;
 
 export default function CameraScreen() {
   const navigation = useNavigation<Nav>();
+  const { t } = useTranslation();
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>("front");
@@ -79,11 +81,9 @@ export default function CameraScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.permissionText}>
-          Camera access is required to chadify yourself
-        </Text>
+        <Text style={styles.permissionText}>{t("camera.permissionText")}</Text>
         <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-          <Text style={styles.permissionButtonText}>Continue</Text>
+          <Text style={styles.permissionButtonText}>{t("camera.continue")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -113,7 +113,7 @@ export default function CameraScreen() {
       const { storageId } = await response.json();
       navigation.navigate("Result", { userPhotoStorageId: storageId });
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? String(e));
+      Alert.alert(t("common.error"), e?.message ?? String(e));
     } finally {
       setCapturing(false);
       setUploading(false);
@@ -149,7 +149,7 @@ export default function CameraScreen() {
       const { storageId } = await response.json();
       navigation.navigate("Result", { userPhotoStorageId: storageId });
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? String(e));
+      Alert.alert(t("common.error"), e?.message ?? String(e));
     } finally {
       setUploading(false);
     }
@@ -167,25 +167,21 @@ export default function CameraScreen() {
       <Modal visible={consentVisible} animationType="fade" transparent>
         <View style={styles.consentBackdrop}>
           <View style={styles.consentCard}>
-            <Text style={styles.consentTitle}>Before you start</Text>
+            <Text style={styles.consentTitle}>{t("camera.consent.title")}</Text>
             <Text style={styles.consentBody}>
-              To transform your photo, Chadify sends your image to{" "}
-              <Text style={styles.consentBold}>Google Gemini AI</Text> for
-              processing. Your original photo is deleted immediately after the
-              transformation is generated — only the result is stored.
+              {t("camera.consent.body1Prefix")}
+              <Text style={styles.consentBold}>{t("camera.consent.body1Brand")}</Text>
+              {t("camera.consent.body1Suffix")}
             </Text>
-            <Text style={styles.consentBody}>
-              By continuing, you agree to this data processing as described in
-              our Privacy Policy.
-            </Text>
+            <Text style={styles.consentBody}>{t("camera.consent.body2")}</Text>
             <TouchableOpacity
               style={styles.consentLinkButton}
               onPress={() => Linking.openURL(PRIVACY_URL)}
             >
-              <Text style={styles.consentLink}>Read Privacy Policy</Text>
+              <Text style={styles.consentLink}>{t("camera.consent.readPolicy")}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.consentAgreeButton} onPress={handleConsentAgree}>
-              <Text style={styles.consentAgreeText}>I Agree</Text>
+              <Text style={styles.consentAgreeText}>{t("camera.consent.agree")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -198,8 +194,8 @@ export default function CameraScreen() {
       <SignInPromptModal
         visible={signInPromptVisible}
         onClose={() => setSignInPromptVisible(false)}
-        title="Unlock Your Full Chad Experience"
-        subtitle="Sign in to access your gallery, purchase credits, and save all your transformations"
+        title={t("camera.signInPromptTitle")}
+        subtitle={t("camera.signInPromptSubtitle")}
       />
 
       <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
@@ -213,14 +209,21 @@ export default function CameraScreen() {
               >
                 <Text style={styles.creditsText}>
                   {isAnonymous
-                    ? countdown ? `⏱  ${countdown}` : "◆  Get credits"
+                    ? countdown
+                      ? t("camera.countdown", { time: countdown })
+                      : t("camera.getCredits")
                     : entitlements?.lifetimeAccess
-                    ? "∞  Lifetime"
+                    ? t("camera.lifetime")
                     : (entitlements?.credits ?? 0) > 0
-                    ? `◆  ${entitlements!.credits} credit${entitlements!.credits === 1 ? "" : "s"}`
+                    ? t(
+                        entitlements!.credits === 1
+                          ? "camera.creditsOne"
+                          : "camera.creditsOther",
+                        { count: entitlements!.credits }
+                      )
                     : countdown
-                    ? `⏱  ${countdown}`
-                    : "◆  Get credits"}
+                    ? t("camera.countdown", { time: countdown })
+                    : t("camera.getCredits")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -228,7 +231,7 @@ export default function CameraScreen() {
                 onPress={() => isAnonymous ? setSignInPromptVisible(true) : navigation.navigate("Gallery")}
                 disabled={busy}
               >
-                <Text style={styles.creditsText}>⊞  Gallery</Text>
+                <Text style={styles.creditsText}>{t("camera.gallery")}</Text>
               </TouchableOpacity>
             </View>
           </View>

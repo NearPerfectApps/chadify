@@ -18,7 +18,9 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { useGuest } from "../context/GuestContext";
+import { useLanguage } from "../context/LanguageContext";
 import SignInPromptModal from "../components/SignInPromptModal";
+import type { LanguagePreference } from "../lib/i18n";
 
 const PRIVACY_URL = "https://www.nearperfectapps.xyz/privacy/chadify";
 const TERMS_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
@@ -28,14 +30,21 @@ export default function SettingsScreen() {
   const { signOut } = useAuthActions();
   const deleteAccount = useMutation(api.users.deleteAccount);
   const { isAnonymous } = useGuest();
+  const { t, preference, setPreference } = useLanguage();
   const [deleting, setDeleting] = useState(false);
   const [signInPromptVisible, setSignInPromptVisible] = useState(false);
 
+  const languageOptions: { key: LanguagePreference; label: string }[] = [
+    { key: "system", label: t("settings.languageSystem") },
+    { key: "en", label: t("settings.languageEnglish") },
+    { key: "fr", label: t("settings.languageFrench") },
+  ];
+
   const handleSignOut = () => {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("settings.signOutConfirmTitle"), t("settings.signOutConfirmBody"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Sign out",
+        text: t("settings.signOut"),
         style: "destructive",
         onPress: async () => {
           await signOut();
@@ -47,12 +56,12 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "Delete account",
-      "This will permanently delete your account and all your transformations. This cannot be undone.",
+      t("settings.deleteAccountConfirmTitle"),
+      t("settings.deleteAccountConfirmBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete account",
+          text: t("settings.deleteAccount"),
           style: "destructive",
           onPress: () => confirmDeleteAccount(),
         },
@@ -62,12 +71,12 @@ export default function SettingsScreen() {
 
   const confirmDeleteAccount = () => {
     Alert.alert(
-      "Are you sure?",
-      "All your data will be deleted immediately and cannot be recovered.",
+      t("settings.deleteAccountFinalTitle"),
+      t("settings.deleteAccountFinalBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Yes, delete everything",
+          text: t("settings.deleteAccountFinalConfirm"),
           style: "destructive",
           onPress: async () => {
             setDeleting(true);
@@ -77,7 +86,7 @@ export default function SettingsScreen() {
               // redirect to the auth screen once the token is invalidated.
             } catch {
               setDeleting(false);
-              Alert.alert("Error", "Failed to delete account. Please try again.");
+              Alert.alert(t("common.error"), t("settings.deleteAccountFailed"));
             }
           },
         },
@@ -91,55 +100,65 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>SETTINGS</Text>
+        <Text style={styles.title}>{t("settings.title")}</Text>
         <View style={styles.headerRight} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>LANGUAGE</Text>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Language</Text>
-            <Text style={styles.rowValue}>English</Text>
-          </View>
-          <Text style={styles.sectionNote}>More languages coming soon.</Text>
+          <Text style={styles.sectionTitle}>{t("settings.sectionLanguage")}</Text>
+          {languageOptions.map((opt) => {
+            const selected = preference === opt.key;
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                style={styles.row}
+                onPress={() => setPreference(opt.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.rowLabel}>{opt.label}</Text>
+                {selected && <Feather name="check" size={16} color="#fff" />}
+              </TouchableOpacity>
+            );
+          })}
+          <Text style={styles.sectionNote}>{t("settings.languageNote")}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>LEGAL</Text>
+          <Text style={styles.sectionTitle}>{t("settings.sectionLegal")}</Text>
           <TouchableOpacity
             style={styles.row}
             onPress={() => Linking.openURL(PRIVACY_URL)}
           >
-            <Text style={styles.rowLabel}>Privacy Policy</Text>
+            <Text style={styles.rowLabel}>{t("settings.privacyPolicy")}</Text>
             <Feather name="external-link" size={14} color="rgba(255,255,255,0.3)" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.row}
             onPress={() => Linking.openURL(TERMS_URL)}
           >
-            <Text style={styles.rowLabel}>Terms of Use</Text>
+            <Text style={styles.rowLabel}>{t("settings.termsOfUse")}</Text>
             <Feather name="external-link" size={14} color="rgba(255,255,255,0.3)" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ACCOUNT</Text>
+          <Text style={styles.sectionTitle}>{t("settings.sectionAccount")}</Text>
           {isAnonymous ? (
             <TouchableOpacity style={styles.row} onPress={() => setSignInPromptVisible(true)}>
-              <Text style={styles.rowLabel}>Create account</Text>
+              <Text style={styles.rowLabel}>{t("settings.createAccount")}</Text>
               <Feather name="user-plus" size={14} color="rgba(255,255,255,0.3)" />
             </TouchableOpacity>
           ) : (
             <>
               <TouchableOpacity style={styles.row} onPress={handleSignOut}>
-                <Text style={styles.rowLabel}>Sign out</Text>
+                <Text style={styles.rowLabel}>{t("settings.signOut")}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.row} onPress={handleDeleteAccount} disabled={deleting}>
                 {deleting ? (
                   <ActivityIndicator color="#ff4c4c" size="small" />
                 ) : (
-                  <Text style={styles.rowLabelDestructive}>Delete account</Text>
+                  <Text style={styles.rowLabelDestructive}>{t("settings.deleteAccount")}</Text>
                 )}
               </TouchableOpacity>
             </>
@@ -149,8 +168,8 @@ export default function SettingsScreen() {
         <SignInPromptModal
           visible={signInPromptVisible}
           onClose={() => setSignInPromptVisible(false)}
-          title="Create Your Account"
-          subtitle="Sign in to save your transformations and unlock all features"
+          title={t("settings.signInPromptTitle")}
+          subtitle={t("settings.signInPromptSubtitle")}
         />
       </ScrollView>
     </SafeAreaView>
