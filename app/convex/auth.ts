@@ -66,7 +66,7 @@ const GoogleNative = ConvexCredentials({
     const rawClientIds = process.env.AUTH_GOOGLE_CLIENT_IDS ?? "";
     const clientIds = rawClientIds
       .split(",")
-      .map((s) => s.trim())
+      .map((s: string) => s.trim())
       .filter(Boolean);
 
     const { payload } = await jwtVerify(idToken, GOOGLE_JWKS, {

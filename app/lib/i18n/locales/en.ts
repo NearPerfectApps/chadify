@@ -57,6 +57,10 @@ const en = {
     signInPromptTitle: "Save Your Chad",
     signInPromptSubtitle:
       "Sign in to save this transformation to your gallery and access it anytime",
+    reviewTitle: "Enjoying Chadify?",
+    reviewBody: "If your first transformation made you smile, a quick review helps more people find the app.",
+    reviewCta: "Leave a Review",
+    reviewLater: "Maybe later",
   },
 
   login: {

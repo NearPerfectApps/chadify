@@ -59,6 +59,11 @@ const fr: Translations = {
     signInPromptTitle: "Sauvegarde ton Chad",
     signInPromptSubtitle:
       "Connecte-toi pour enregistrer cette transformation dans ta galerie et y accéder à tout moment",
+    reviewTitle: "Tu aimes Chadify ?",
+    reviewBody:
+      "Si ta première transformation t'a fait sourire, un avis rapide aide d'autres personnes à découvrir l'app.",
+    reviewCta: "Laisser un avis",
+    reviewLater: "Plus tard",
   },
 
   login: {
