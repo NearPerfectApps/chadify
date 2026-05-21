@@ -23,6 +23,7 @@ import PaywallScreen from "./PaywallScreen";
 import { useGuest } from "../context/GuestContext";
 import { useTranslation } from "../context/LanguageContext";
 import SignInPromptModal from "../components/SignInPromptModal";
+import ShareRewardPrompt from "../components/ShareRewardPrompt";
 
 const AI_CONSENT_KEY = "aiConsentGiven";
 const FIRST_GENERATION_REVIEW_PROMPT_KEY = "firstGenerationReviewPromptSeen";
@@ -44,6 +45,8 @@ export default function CameraScreen() {
   const [consentVisible, setConsentVisible] = useState(false);
   const [signInPromptVisible, setSignInPromptVisible] = useState(false);
   const [reviewPromptVisible, setReviewPromptVisible] = useState(false);
+  const [shareRewardVisible, setShareRewardVisible] = useState(false);
+  const shareRewardStatus = useQuery(api.entitlements.getMyShareRewardStatus);
   const { isAnonymous } = useGuest();
   const cameraRef = useRef<CameraView>(null);
   const entitlements = useQuery(api.entitlements.getMyEntitlements);
@@ -78,18 +81,27 @@ export default function CameraScreen() {
   useEffect(() => {
     if (!route.params?.showReviewPrompt) return;
     navigation.setParams({ showReviewPrompt: undefined });
-    maybeShowFirstGenerationReviewPrompt();
+    (async () => {
+      const reviewShown = await maybeShowFirstGenerationReviewPrompt();
+      // Avoid stacking modals: only offer the share reward on later generations,
+      // once the first-generation review prompt has already been seen.
+      if (!reviewShown && shareRewardStatus?.eligible === true) {
+        setShareRewardVisible(true);
+      }
+    })();
   }, [route.params?.showReviewPrompt]);
 
-  const maybeShowFirstGenerationReviewPrompt = async () => {
+  const maybeShowFirstGenerationReviewPrompt = async (): Promise<boolean> => {
     try {
       const alreadySeen = await SecureStore.getItemAsync(FIRST_GENERATION_REVIEW_PROMPT_KEY);
-      if (alreadySeen) return;
+      if (alreadySeen) return false;
 
       await SecureStore.setItemAsync(FIRST_GENERATION_REVIEW_PROMPT_KEY, "true");
       setReviewPromptVisible(true);
+      return true;
     } catch {
       // Review prompts are non-critical; never block the camera screen.
+      return false;
     }
   };
 
@@ -230,6 +242,11 @@ export default function CameraScreen() {
         onClose={() => setSignInPromptVisible(false)}
         title={t("camera.signInPromptTitle")}
         subtitle={t("camera.signInPromptSubtitle")}
+      />
+
+      <ShareRewardPrompt
+        visible={shareRewardVisible}
+        onClose={() => setShareRewardVisible(false)}
       />
 
       <Modal

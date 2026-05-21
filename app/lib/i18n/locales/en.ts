@@ -103,6 +103,26 @@ const en = {
     pleaseTryAgain: "Please try again.",
   },
 
+  shareReward: {
+    kicker: "FREE CREDITS",
+    title: "Get 5 free credits",
+    body: "Share Chadify with a friend and unlock 5 credits. This one-time reward stays available in Settings if you want to do it later.",
+    settingsTitle: "Share and get 5 credits",
+    settingsSubtitle: "One-time reward for sharing Chadify.",
+    shareNow: "Share now",
+    maybeLater: "Maybe later",
+    shareTitle: "Try Chadify",
+    shareMessage: "Turn any selfie into a gigachad with Chadify:",
+    claimedTitle: "5 credits added",
+    claimedBody: "Your free credits are ready to use.",
+    alreadyClaimedTitle: "Already claimed",
+    alreadyClaimedBody: "This one-time reward has already been used.",
+    failed: "Could not complete the share reward. Please try again.",
+    claimRetryBody: "Sharing worked, but we couldn't add your credits. Tap again to retry.",
+    disabledTitle: "Reward already claimed",
+    disabledSubtitle: "Thanks for sharing Chadify.",
+  },
+
   settings: {
     title: "SETTINGS",
     sectionLanguage: "LANGUAGE",

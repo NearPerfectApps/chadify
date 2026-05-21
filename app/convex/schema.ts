@@ -19,6 +19,8 @@ export default defineSchema({
     subscriptionType: v.union(v.literal("none"), v.literal("monthly"), v.literal("annual")),
     subscriptionExpiresAt: v.optional(v.number()),
     lastFreeGenerationAt: v.optional(v.number()),
+    shareRewardClaimedAt: v.optional(v.number()),
+    shareRewardPromptDismissedAt: v.optional(v.number()),
     updatedAt: v.number(),
   }).index("by_user", ["userId"]),
 

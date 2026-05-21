@@ -107,6 +107,26 @@ const fr: Translations = {
     pleaseTryAgain: "Merci de réessayer.",
   },
 
+  shareReward: {
+    kicker: "CRÉDITS OFFERTS",
+    title: "Obtiens 5 crédits gratuits",
+    body: "Partage Chadify avec un ami et débloque 5 crédits. Cette récompense unique reste disponible dans les réglages si tu veux le faire plus tard.",
+    settingsTitle: "Partage et gagne 5 crédits",
+    settingsSubtitle: "Récompense unique pour partager Chadify.",
+    shareNow: "Partager maintenant",
+    maybeLater: "Plus tard",
+    shareTitle: "Essaie Chadify",
+    shareMessage: "Transforme n'importe quel selfie en gigachad avec Chadify :",
+    claimedTitle: "5 crédits ajoutés",
+    claimedBody: "Tes crédits gratuits sont prêts à être utilisés.",
+    alreadyClaimedTitle: "Déjà récupéré",
+    alreadyClaimedBody: "Cette récompense unique a déjà été utilisée.",
+    failed: "Impossible de valider la récompense de partage. Merci de réessayer.",
+    claimRetryBody: "Le partage a fonctionné, mais on n'a pas pu ajouter tes crédits. Touche à nouveau pour réessayer.",
+    disabledTitle: "Récompense déjà reçue",
+    disabledSubtitle: "Merci d'avoir partagé Chadify.",
+  },
+
   settings: {
     title: "RÉGLAGES",
     sectionLanguage: "LANGUE",
