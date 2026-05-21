@@ -3,7 +3,7 @@
     "name": "Chadify",
     "slug": "chadify",
     "scheme": "chadify",
-    "version": "1.1",
+    "version": "1.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
